@@ -50,7 +50,7 @@ describe('Twilio VAPI Webhook Handler', () => {
       expect(result.statusCode).toBe(200);
       expect(result.headers['Content-Type']).toBe('application/xml');
       expect(result.body).toContain('<Response>');
-      expect(result.body).toContain('Connecting you to our AI assistant');
+      expect(result.body).toContain('<Stream url="wss://stream.vapi.ai/call_123"');
     });
 
     it('should return 200 for valid answered webhook', async () => {
@@ -153,16 +153,14 @@ describe('Twilio VAPI Webhook Handler', () => {
       await handler(event, mockContext);
 
       expect(axios.post).toHaveBeenCalledWith(
-        'https://api.vapi.ai/call/phone',
+        'https://api.vapi.ai/call',
         expect.objectContaining({
-          type: 'inboundPhoneCall',
-          phoneNumber: {
-            twilioPhoneNumber: mockTwilioWebhookData.ringing.To,
-            twilioAccountSid: mockTwilioWebhookData.ringing.AccountSid
-          },
+          phoneCallProviderBypassEnabled: true,
+          phoneNumberId: "aa785a4a-455b-4e2a-9497-df42b1d799ef",
           customer: {
             number: mockTwilioWebhookData.ringing.From
-          }
+          },
+          assistantId: "test-assistant-id"
         }),
         expect.objectContaining({
           headers: expect.objectContaining({

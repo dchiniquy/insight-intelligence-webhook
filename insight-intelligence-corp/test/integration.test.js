@@ -38,7 +38,12 @@ describe('Webhook Integration Tests', () => {
       // Set up axios mock responses for this test
       axios.post
         .mockResolvedValueOnce({
-          data: { id: 'call_123', streamUrl: 'wss://stream.vapi.ai/call_123' }
+          data: { 
+            id: 'call_123', 
+            phoneCallProviderDetails: { 
+              twiml: '<?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://stream.vapi.ai/call_123" /></Connect></Response>'
+            }
+          }
         })
         .mockResolvedValueOnce({
           data: { success: true }
@@ -51,9 +56,9 @@ describe('Webhook Integration Tests', () => {
       const ringingResult = await handler(ringingEvent, mockContext);
       
       expect(ringingResult.statusCode).toBe(200);
-      expect(ringingResult.body).toContain('Connecting you to our AI assistant');
+      expect(ringingResult.body).toContain('<Stream url="wss://stream.vapi.ai/call_123"');
       expect(axios.post).toHaveBeenCalledWith(
-        'https://api.vapi.ai/call/phone',
+        'https://api.vapi.ai/call',
         expect.any(Object),
         expect.any(Object)
       );
@@ -136,7 +141,12 @@ describe('Webhook Integration Tests', () => {
   describe('Performance and reliability', () => {
     it('should handle high-volume concurrent requests', async () => {
       axios.post.mockResolvedValue({
-        data: { id: 'call_123', streamUrl: 'wss://stream.vapi.ai/call_123' }
+        data: { 
+          id: 'call_123', 
+          phoneCallProviderDetails: { 
+            twiml: '<?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://stream.vapi.ai/call_123" /></Connect></Response>'
+          }
+        }
       });
 
       const promises = [];
@@ -163,7 +173,12 @@ describe('Webhook Integration Tests', () => {
 
     it('should complete within acceptable time limits', async () => {
       axios.post.mockResolvedValue({
-        data: { id: 'call_123', streamUrl: 'wss://stream.vapi.ai/call_123' }
+        data: { 
+          id: 'call_123', 
+          phoneCallProviderDetails: { 
+            twiml: '<?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://stream.vapi.ai/call_123" /></Connect></Response>'
+          }
+        }
       });
 
       const body = createFormBody(mockTwilioWebhookData.ringing);
