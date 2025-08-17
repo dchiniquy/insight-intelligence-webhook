@@ -7,7 +7,7 @@ exports.handler = async (event) => {
     try {
         // Validate Twilio webhook signature
         const signature = event.headers['X-Twilio-Signature'] || event.headers['x-twilio-signature'];
-        const url = `https://${event.headers.Host}${event.requestContext.path}`;
+        const url = `https://${event.headers.Host}${event.requestContext.stage}${event.requestContext.path}`;
         
         if (!validateTwilioSignature(event.body, signature, url)) {
             return {
