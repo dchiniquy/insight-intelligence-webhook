@@ -21,6 +21,11 @@ variable "lambda_zip_path" {
   type        = string
 }
 
+variable "secrets_name" {
+  description = "Name of the AWS Secrets Manager secret containing API keys"
+  type        = string
+}
+
 variable "vapi_api_key" {
   description = "VAPI API key"
   type        = string

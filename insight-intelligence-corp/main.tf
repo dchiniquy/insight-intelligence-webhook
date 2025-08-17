@@ -1,6 +1,12 @@
 terraform {
   required_version = ">= 1.0"
   
+  backend "s3" {
+    bucket = "webhook-state"
+    key    = "insight-intelligence-corp/terraform.tfstate"
+    region = "us-west-2"
+  }
+  
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -40,6 +46,7 @@ module "twilio_vapi_webhook" {
   project_name        = var.project_name
   environment         = var.environment
   lambda_zip_path     = data.archive_file.lambda_zip.output_path
+  secrets_name        = var.secrets_name
   vapi_api_key        = var.vapi_api_key
   vapi_endpoint       = var.vapi_endpoint
   vapi_assistant_id   = var.vapi_assistant_id

@@ -10,6 +10,12 @@ variable "project_name" {
   default     = "insight-intelligence-corp"
 }
 
+variable "secrets_name" {
+  description = "Name of the AWS Secrets Manager secret containing API keys"
+  type        = string
+  default     = "insight-intelligence-corp-secrets"
+}
+
 variable "environment" {
   description = "Environment (dev, staging, prod)"
   type        = string
