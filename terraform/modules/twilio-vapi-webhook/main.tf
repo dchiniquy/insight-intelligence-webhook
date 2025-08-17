@@ -1,3 +1,16 @@
+# AWS Secrets Manager data source
+data "aws_secretsmanager_secret" "app_secrets" {
+  name = var.secrets_name
+}
+
+data "aws_secretsmanager_secret_version" "app_secrets" {
+  secret_id = data.aws_secretsmanager_secret.app_secrets.id
+}
+
+locals {
+  secrets = jsondecode(data.aws_secretsmanager_secret_version.app_secrets.secret_string)
+}
+
 # IAM Role for Lambda
 resource "aws_iam_role" "lambda_role" {
   name = "${var.project_name}-${var.environment}-lambda-role"
@@ -24,6 +37,25 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
   role       = aws_iam_role.lambda_role.name
 }
 
+# IAM Policy for Lambda to access Secrets Manager
+resource "aws_iam_role_policy" "lambda_secrets_policy" {
+  name = "${var.project_name}-${var.environment}-lambda-secrets-policy"
+  role = aws_iam_role.lambda_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = data.aws_secretsmanager_secret.app_secrets.arn
+      }
+    ]
+  })
+}
+
 # Lambda function
 resource "aws_lambda_function" "webhook" {
   filename         = var.lambda_zip_path
@@ -37,10 +69,10 @@ resource "aws_lambda_function" "webhook" {
 
   environment {
     variables = {
-      VAPI_API_KEY      = var.vapi_api_key
+      VAPI_API_KEY      = local.secrets["VAPI-API-Key"]
       VAPI_ENDPOINT     = var.vapi_endpoint
       VAPI_ASSISTANT_ID = var.vapi_assistant_id
-      TWILIO_AUTH_TOKEN = var.twilio_auth_token
+      TWILIO_AUTH_TOKEN = local.secrets["Twilio-Auth-Token"]
     }
   }
 

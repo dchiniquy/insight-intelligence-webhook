@@ -4,13 +4,18 @@ aws_region = "us-west-2"
 project_name = "insight-intelligence-corp"
 environment = "dev"
 
-# Get these from your VAPI dashboard
+# AWS Secrets Manager secret name containing API keys
+# The secret should contain JSON with keys: "VAPI-API-Key" and "Twilio-Auth-Token"
+secrets_name = "insight-intelligence-corp-secrets"
+
+# DEPRECATED: Use AWS Secrets Manager instead of these variables
+# These are kept for backward compatibility but will be ignored if secrets_name is provided
 vapi_api_key = "your-vapi-api-key-here"
+twilio_auth_token = "your-twilio-auth-token-here"
+
+# non secret variables
 vapi_endpoint = "https://api.vapi.ai"
 vapi_assistant_id = "your-vapi-assistant-id-here"
-
-# Get this from your Twilio console
-twilio_auth_token = "your-twilio-auth-token-here"
 
 tags = {
   Project     = "insight-intelligence-corp"
