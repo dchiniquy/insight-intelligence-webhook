@@ -8,14 +8,18 @@ A serverless webhook integration that connects Twilio phone calls to VAPI AI ass
 - **AWS Lambda**: Processes webhook events and integrates with VAPI
 - **Terraform**: Infrastructure as Code for deployment
 - **Node.js**: Lambda function runtime
+- **Jest**: Testing framework with coverage reporting
 
 ## Project Structure
 
 ```
 ├── insight-intelligence-corp/    # Company-specific deployment
 │   ├── index.js                 # Lambda webhook handler
-│   ├── package.json             # Lambda dependencies
-│   ├── .gitignore              # Node.js gitignore
+│   ├── index.test.js            # Test suite for webhook handler
+│   ├── package.json             # Lambda dependencies and test scripts
+│   ├── jest.config.js           # Jest testing configuration
+│   ├── .gitignore              # Node.js gitignore (includes test artifacts)
+│   ├── test/                   # Additional test files and utilities
 │   ├── main.tf                 # Company Terraform configuration
 │   ├── variables.tf            # Company-specific variables
 │   ├── outputs.tf              # Company-specific outputs
@@ -46,6 +50,7 @@ To add a new company webhook:
    # Edit variables.tf to set default project_name
    # Edit terraform.tfvars.example with company-specific values
    # Optionally customize index.js for company-specific logic
+   # Update package.json name and description for the company
    ```
 
 3. **Deploy**:
@@ -85,6 +90,37 @@ To add a new company webhook:
    environment = "dev"
    ```
 
+## Development
+
+### Testing
+
+Run tests for the webhook handler:
+```bash
+cd insight-intelligence-corp
+
+# Run all tests
+npm test
+
+# Run tests in watch mode during development
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+```
+
+### Local Development
+
+1. **Install dependencies**:
+   ```bash
+   cd insight-intelligence-corp
+   npm install
+   ```
+
+2. **Run tests before deployment**:
+   ```bash
+   npm test
+   ```
+
 ## Deployment
 
 Deploy the infrastructure for a specific company:
@@ -98,7 +134,8 @@ Deploy the infrastructure for a specific company:
 
 This will:
 - Install Lambda dependencies for the company
-- Build the deployment package
+- Run tests to ensure code quality
+- Build the deployment package (excluding test files)
 - Deploy AWS infrastructure via Terraform
 - Output the webhook URL for that company
 
@@ -117,9 +154,25 @@ This will:
 
 ## Testing
 
-1. Call your Twilio phone number
-2. The call should be connected to your VAPI assistant
-3. Monitor logs in AWS CloudWatch
+### Unit Tests
+
+The project includes comprehensive unit tests for the webhook handler:
+- Twilio signature validation
+- Event handling (ringing, answered, completed)
+- VAPI integration functions
+- Error handling scenarios
+
+### Integration Testing
+
+1. **Local testing**: Run the test suite to verify webhook logic
+   ```bash
+   cd insight-intelligence-corp
+   npm test
+   ```
+
+2. **Live testing**: Call your Twilio phone number
+   - The call should be connected to your VAPI assistant
+   - Monitor logs in AWS CloudWatch
 
 ## Monitoring
 
