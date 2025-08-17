@@ -60,7 +60,9 @@ const mockVAPIResponse = {
   success: {
     id: 'call_123',
     status: 'active',
-    streamUrl: 'wss://stream.vapi.ai/call_123'
+    phoneCallProviderDetails: {
+      twiml: '<?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://stream.vapi.ai/call_123" /></Connect></Response>'
+    }
   },
   error: {
     error: 'Invalid API key',

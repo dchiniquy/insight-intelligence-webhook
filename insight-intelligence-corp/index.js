@@ -27,7 +27,6 @@ exports.handler = async (event) => {
         const params = new URLSearchParams(body);
         const twilioData = Object.fromEntries(params);
         
-        console.log('Twilio webhook data:', twilioData);
         
         // Process different Twilio webhook types
         const response = await processTwilioWebhook(twilioData);
@@ -188,22 +187,15 @@ async function processTwilioWebhook(data) {
 }
 
 async function handleIncomingCall(data) {
-    console.log('Handling incoming call:', data);
-    
     try {
-        // Start VAPI call
-        const vapiCall = await startVAPICall(data);
+        // Create VAPI call using the correct API approach
+        const vapiCall = await createVAPICall(data);
         
-        // Return TwiML to connect to VAPI
-        return generateTwiMLResponse(`
-            <Say>Connecting you to our AI assistant.</Say>
-            <Dial>
-                <Stream url="${vapiCall.streamUrl}" />
-            </Dial>
-        `);
+        // Return the TwiML provided by VAPI
+        return vapiCall.twiml;
         
     } catch (error) {
-        console.error('Error starting VAPI call:', error);
+        console.error('Error creating VAPI call:', error);
         
         return generateTwiMLResponse(`
             <Say>Sorry, we're experiencing technical difficulties. Please try again later.</Say>
@@ -212,62 +204,37 @@ async function handleIncomingCall(data) {
     }
 }
 
-async function handleCallAnswered(data) {
-    console.log('Call answered:', data);
-    
-    // Log call answered event
-    await logCallEvent(data, 'answered');
-    
-    return generateTwiMLResponse('');
-}
-
-async function handleCallCompleted(data) {
-    console.log('Call completed:', data);
-    
-    // Log call completion and duration
-    await logCallEvent(data, 'completed');
-    
-    // End VAPI call if needed
-    await endVAPICall(data.CallSid);
-    
-    return generateTwiMLResponse('');
-}
-
-async function startVAPICall(twilioData) {
-    const { From, To, CallSid } = twilioData;
+async function createVAPICall(twilioData) {
+    const { From, To } = twilioData;
     const VAPI_API_KEY = process.env.VAPI_API_KEY;
     const VAPI_ENDPOINT = process.env.VAPI_ENDPOINT;
-    
     const VAPI_ASSISTANT_ID = process.env.VAPI_ASSISTANT_ID;
     
     const vapiPayload = {
-        type: 'inboundPhoneCall',
-        phoneNumber: {
-            twilioPhoneNumber: To,
-            twilioAccountSid: twilioData.AccountSid
-        },
+        phoneCallProviderBypassEnabled: true,
+        phoneNumberId: "aa785a4a-455b-4e2a-9497-df42b1d799ef",
         customer: {
             number: From
-        }
+        },
+        assistantId: VAPI_ASSISTANT_ID
     };
     
-    // Only include assistantId if it's configured
-    if (VAPI_ASSISTANT_ID) {
-        vapiPayload.assistantId = VAPI_ASSISTANT_ID;
-    }
-    
-    console.log('VAPI request payload:', JSON.stringify(vapiPayload, null, 2));
     
     try {
-        const response = await axios.post(`${VAPI_ENDPOINT}/call/phone`, vapiPayload, {
+        const response = await axios.post(`${VAPI_ENDPOINT}/call`, vapiPayload, {
             headers: {
                 'Authorization': `Bearer ${VAPI_API_KEY}`,
                 'Content-Type': 'application/json'
             }
         });
         
-        console.log('VAPI call started:', response.data);
-        return response.data;
+        
+        // Return the TwiML from VAPI's response
+        return {
+            twiml: response.data.phoneCallProviderDetails.twiml,
+            callId: response.data.id
+        };
+        
     } catch (error) {
         console.error('VAPI API error details:', {
             status: error.response?.status,
@@ -278,6 +245,18 @@ async function startVAPICall(twilioData) {
         throw error;
     }
 }
+
+async function handleCallAnswered(data) {
+    await logCallEvent(data, 'answered');
+    return generateTwiMLResponse('');
+}
+
+async function handleCallCompleted(data) {
+    await logCallEvent(data, 'completed');
+    await endVAPICall(data.CallSid);
+    return generateTwiMLResponse('');
+}
+
 
 async function endVAPICall(callSid) {
     if (!callSid) return;
@@ -293,7 +272,6 @@ async function endVAPICall(callSid) {
             }
         });
         
-        console.log('VAPI call ended:', response.data);
     } catch (error) {
         console.error('Error ending VAPI call:', error);
     }
