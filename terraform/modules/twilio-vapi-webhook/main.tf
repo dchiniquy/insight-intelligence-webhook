@@ -79,7 +79,7 @@ resource "aws_lambda_function" "webhook" {
     variables = {
       VAPI_API_KEY      = local.secrets["VAPI-API-Key"]
       VAPI_ENDPOINT     = var.vapi_endpoint
-      VAPI_ASSISTANT_ID = var.vapi_assistant_id
+      VAPI_ASSISTANT_ID = local.secrets["VAPI-Assistant-Id"]
       TWILIO_AUTH_TOKEN = local.secrets["Twilio-Auth-Token"]
     }
   }
