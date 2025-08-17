@@ -1,0 +1,18 @@
+# Copy this file to terraform.tfvars and fill in your values
+
+aws_region = "us-east-1"
+project_name = "insight-intelligence-corp"
+environment = "dev"
+
+# Get these from your VAPI dashboard
+vapi_api_key = "your-vapi-api-key-here"
+vapi_endpoint = "https://api.vapi.ai"
+
+# Get this from your Twilio console
+twilio_auth_token = "your-twilio-auth-token-here"
+
+tags = {
+  Project     = "insight-intelligence-corp"
+  Environment = "dev"
+  ManagedBy   = "terraform"
+}
