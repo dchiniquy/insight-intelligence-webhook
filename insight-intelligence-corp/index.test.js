@@ -81,18 +81,16 @@ describe('Twilio VAPI Webhook Handler', () => {
       expect(result.body).toContain('<Response>');
     });
 
-    it('should return 403 for invalid Twilio signature', async () => {
-      const twilio = require('twilio');
-      twilio.validateRequest.mockReturnValue(false);
-
+    it('should return 403 for invalid Twilio request', async () => {
       const body = createFormBody(mockTwilioWebhookData.ringing);
-      const event = mockAPIGatewayEvent(body);
-      event.headers['X-Twilio-Signature'] = 'invalid-signature';
+      const event = mockAPIGatewayEvent(body, {
+        'User-Agent': 'InvalidAgent/1.0' // Invalid User-Agent to trigger validation failure
+      });
 
       const result = await handler(event, mockContext);
 
       expect(result.statusCode).toBe(403);
-      expect(JSON.parse(result.body).error).toBe('Invalid Twilio signature');
+      expect(JSON.parse(result.body).error).toBe('Invalid Twilio request');
     });
 
     it('should return 500 on VAPI API error', async () => {
@@ -110,16 +108,15 @@ describe('Twilio VAPI Webhook Handler', () => {
       expect(result.body).toContain('technical difficulties');
     });
 
-    it('should handle missing signature gracefully', async () => {
-      const twilio = require('twilio');
-      twilio.validateRequest.mockReturnValue(true);
-
+    it('should reject requests with missing signature header', async () => {
       const body = createFormBody(mockTwilioWebhookData.ringing);
-      const event = mockAPIGatewayEvent(body, { 'X-Twilio-Signature': undefined });
+      const event = mockAPIGatewayEvent(body);
+      delete event.headers['X-Twilio-Signature']; // Remove required header
 
       const result = await handler(event, mockContext);
 
-      expect(result.statusCode).toBe(200);
+      expect(result.statusCode).toBe(403);
+      expect(JSON.parse(result.body).error).toBe('Invalid Twilio request');
     });
 
     it('should handle unknown call status', async () => {
@@ -159,11 +156,13 @@ describe('Twilio VAPI Webhook Handler', () => {
         'https://api.vapi.ai/call/phone',
         expect.objectContaining({
           type: 'inboundPhoneCall',
-          phoneNumber: mockTwilioWebhookData.ringing.To,
+          phoneNumber: {
+            twilioPhoneNumber: mockTwilioWebhookData.ringing.To,
+            twilioAccountSid: mockTwilioWebhookData.ringing.AccountSid
+          },
           customer: {
             number: mockTwilioWebhookData.ringing.From
-          },
-          twilioCallSid: mockTwilioWebhookData.ringing.CallSid
+          }
         }),
         expect.objectContaining({
           headers: expect.objectContaining({
@@ -199,16 +198,13 @@ describe('Twilio VAPI Webhook Handler', () => {
   });
 
   describe('error handling', () => {
-    it('should handle malformed request body', async () => {
-      const twilio = require('twilio');
-      twilio.validateRequest.mockReturnValue(true);
-
-      const event = mockAPIGatewayEvent('invalid-body-format');
+    it('should reject malformed request body', async () => {
+      const event = mockAPIGatewayEvent('invalid-body-format'); // Missing required parameters
 
       const result = await handler(event, mockContext);
 
-      expect(result.statusCode).toBe(200);
-      expect(result.body).toContain('<Response>');
+      expect(result.statusCode).toBe(403);
+      expect(JSON.parse(result.body).error).toBe('Invalid Twilio request');
     });
 
     it('should handle missing environment variables', async () => {

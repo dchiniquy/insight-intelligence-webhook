@@ -2,9 +2,9 @@
 
 const mockTwilioWebhookData = {
   ringing: {
-    AccountSid: 'AC123456789',
+    AccountSid: 'ACfakeaccountsidfortestingpurposes',
     ApiVersion: '2010-04-01',
-    CallSid: 'CA123456789',
+    CallSid: 'CAfakecallsidforitestingpurposesxx',
     CallStatus: 'ringing',
     Called: '+15551234567',
     Caller: '+15559876543',
@@ -13,9 +13,9 @@ const mockTwilioWebhookData = {
     To: '+15551234567',
   },
   answered: {
-    AccountSid: 'AC123456789',
+    AccountSid: 'ACfakeaccountsidfortestingpurposes',
     ApiVersion: '2010-04-01',
-    CallSid: 'CA123456789',
+    CallSid: 'CAfakecallsidforitestingpurposesxx',
     CallStatus: 'answered',
     Called: '+15551234567',
     Caller: '+15559876543',
@@ -24,9 +24,9 @@ const mockTwilioWebhookData = {
     To: '+15551234567',
   },
   completed: {
-    AccountSid: 'AC123456789',
+    AccountSid: 'ACfakeaccountsidfortestingpurposes',
     ApiVersion: '2010-04-01',
-    CallSid: 'CA123456789',
+    CallSid: 'CAfakecallsidforitestingpurposesxx',
     CallStatus: 'completed',
     Called: '+15551234567',
     Caller: '+15559876543',
@@ -40,14 +40,18 @@ const mockTwilioWebhookData = {
 const mockAPIGatewayEvent = (body, headers = {}) => ({
   body,
   headers: {
-    'Content-Type': 'application/x-www-form-urlencoded',
+    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
     'Host': 'api.example.com',
+    'User-Agent': 'TwilioProxy/1.1',
+    'I-Twilio-Idempotency-Token': 'test-idempotency-token',
     'X-Twilio-Signature': 'mock-signature',
     ...headers
   },
   requestContext: {
-    path: '/webhook',
-    httpMethod: 'POST'
+    domainName: 'api.example.com',
+    path: '/dev/webhook',
+    httpMethod: 'POST',
+    requestTimeEpoch: Date.now()
   },
   isBase64Encoded: false
 });

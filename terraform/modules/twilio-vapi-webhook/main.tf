@@ -56,6 +56,14 @@ resource "aws_iam_role_policy" "lambda_secrets_policy" {
   })
 }
 
+# CloudWatch Log Group for Lambda
+resource "aws_cloudwatch_log_group" "lambda_logs" {
+  name              = "/aws/lambda/${var.project_name}-${var.environment}-${var.lambda_function_name}"
+  retention_in_days = 14
+
+  tags = var.tags
+}
+
 # Lambda function
 resource "aws_lambda_function" "webhook" {
   filename         = var.lambda_zip_path
@@ -71,10 +79,12 @@ resource "aws_lambda_function" "webhook" {
     variables = {
       VAPI_API_KEY      = local.secrets["VAPI-API-Key"]
       VAPI_ENDPOINT     = var.vapi_endpoint
-      VAPI_ASSISTANT_ID = var.vapi_assistant_id
+      VAPI_ASSISTANT_ID = local.secrets["VAPI-Assistant-Id"]
       TWILIO_AUTH_TOKEN = local.secrets["Twilio-Auth-Token"]
     }
   }
+
+  depends_on = [aws_cloudwatch_log_group.lambda_logs]
 
   tags = var.tags
 }

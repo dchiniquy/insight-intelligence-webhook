@@ -109,29 +109,27 @@ describe('Webhook Integration Tests', () => {
   });
 
   describe('Security validation', () => {
-    it('should reject requests with invalid signatures', async () => {
-      const twilio = require('twilio');
-      twilio.validateRequest.mockReturnValueOnce(false);
-
+    it('should reject requests with invalid headers', async () => {
       const body = createFormBody(mockTwilioWebhookData.ringing);
       const event = mockAPIGatewayEvent(body, {
-        'X-Twilio-Signature': 'invalid-signature'
+        'User-Agent': 'InvalidAgent/1.0' // Invalid User-Agent to trigger validation failure
       });
 
       const result = await handler(event, mockContext);
 
       expect(result.statusCode).toBe(403);
-      expect(JSON.parse(result.body).error).toBe('Invalid Twilio signature');
+      expect(JSON.parse(result.body).error).toBe('Invalid Twilio request');
     });
 
-    it('should handle missing signature header', async () => {
+    it('should reject requests with missing signature header', async () => {
       const body = createFormBody(mockTwilioWebhookData.ringing);
       const event = mockAPIGatewayEvent(body, {});
       delete event.headers['X-Twilio-Signature'];
 
       const result = await handler(event, mockContext);
 
-      expect(result.statusCode).toBe(200);
+      expect(result.statusCode).toBe(403);
+      expect(JSON.parse(result.body).error).toBe('Invalid Twilio request');
     });
   });
 
@@ -147,7 +145,7 @@ describe('Webhook Integration Tests', () => {
       for (let i = 0; i < 10; i++) {
         const callData = {
           ...mockTwilioWebhookData.ringing,
-          CallSid: `CA12345678${i}`
+          CallSid: `CAfakecallsidforitestingpurposese${i}` // Valid 34-char format
         };
         
         const body = createFormBody(callData);
