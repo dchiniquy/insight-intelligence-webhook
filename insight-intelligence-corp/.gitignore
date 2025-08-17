@@ -2,3 +2,6 @@ node_modules/
 function.zip
 .env
 *.log
+coverage/
+.nyc_output/
+.jest/

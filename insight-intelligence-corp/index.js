@@ -1,10 +1,6 @@
 const twilio = require('twilio');
 const axios = require('axios');
 
-const VAPI_API_KEY = process.env.VAPI_API_KEY;
-const VAPI_ENDPOINT = process.env.VAPI_ENDPOINT;
-const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
-
 exports.handler = async (event) => {
     console.log('Received event:', JSON.stringify(event, null, 2));
     
@@ -51,6 +47,7 @@ exports.handler = async (event) => {
 };
 
 function validateTwilioSignature(body, signature, url) {
+    const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
     if (!signature || !TWILIO_AUTH_TOKEN) {
         console.warn('Missing signature or auth token for validation');
         return true; // Skip validation if not configured
@@ -127,6 +124,8 @@ async function handleCallCompleted(data) {
 
 async function startVAPICall(twilioData) {
     const { From, To, CallSid } = twilioData;
+    const VAPI_API_KEY = process.env.VAPI_API_KEY;
+    const VAPI_ENDPOINT = process.env.VAPI_ENDPOINT;
     
     const vapiPayload = {
         type: 'inboundPhoneCall',
@@ -151,6 +150,9 @@ async function startVAPICall(twilioData) {
 
 async function endVAPICall(callSid) {
     if (!callSid) return;
+    
+    const VAPI_API_KEY = process.env.VAPI_API_KEY;
+    const VAPI_ENDPOINT = process.env.VAPI_ENDPOINT;
     
     try {
         const response = await axios.post(`${VAPI_ENDPOINT}/call/${callSid}/end`, {}, {
