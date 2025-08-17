@@ -33,6 +33,12 @@ variable "vapi_endpoint" {
   default     = "https://api.vapi.ai"
 }
 
+variable "vapi_assistant_id" {
+  description = "VAPI assistant ID to use for calls"
+  type        = string
+  default     = ""
+}
+
 variable "twilio_auth_token" {
   description = "Twilio auth token for webhook validation"
   type        = string

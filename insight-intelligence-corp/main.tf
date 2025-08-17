@@ -42,6 +42,7 @@ module "twilio_vapi_webhook" {
   lambda_zip_path     = data.archive_file.lambda_zip.output_path
   vapi_api_key        = var.vapi_api_key
   vapi_endpoint       = var.vapi_endpoint
+  vapi_assistant_id   = var.vapi_assistant_id
   twilio_auth_token   = var.twilio_auth_token
 
   tags = var.tags

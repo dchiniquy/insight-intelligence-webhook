@@ -34,6 +34,12 @@ variable "twilio_auth_token" {
   sensitive   = true
 }
 
+variable "vapi_assistant_id" {
+  description = "VAPI assistant ID to use for calls"
+  type        = string
+  default     = ""
+}
+
 variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)

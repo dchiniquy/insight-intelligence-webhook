@@ -37,8 +37,9 @@ resource "aws_lambda_function" "webhook" {
 
   environment {
     variables = {
-      VAPI_API_KEY    = var.vapi_api_key
-      VAPI_ENDPOINT   = var.vapi_endpoint
+      VAPI_API_KEY      = var.vapi_api_key
+      VAPI_ENDPOINT     = var.vapi_endpoint
+      VAPI_ASSISTANT_ID = var.vapi_assistant_id
       TWILIO_AUTH_TOKEN = var.twilio_auth_token
     }
   }

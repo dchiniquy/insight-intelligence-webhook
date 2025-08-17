@@ -127,6 +127,8 @@ async function startVAPICall(twilioData) {
     const VAPI_API_KEY = process.env.VAPI_API_KEY;
     const VAPI_ENDPOINT = process.env.VAPI_ENDPOINT;
     
+    const VAPI_ASSISTANT_ID = process.env.VAPI_ASSISTANT_ID;
+    
     const vapiPayload = {
         type: 'inboundPhoneCall',
         phoneNumber: To,
@@ -134,8 +136,12 @@ async function startVAPICall(twilioData) {
             number: From
         },
         twilioCallSid: CallSid,
-        assistantId: process.env.VAPI_ASSISTANT_ID, // Optional: specify assistant
     };
+    
+    // Only include assistantId if it's configured
+    if (VAPI_ASSISTANT_ID) {
+        vapiPayload.assistantId = VAPI_ASSISTANT_ID;
+    }
     
     const response = await axios.post(`${VAPI_ENDPOINT}/call/phone`, vapiPayload, {
         headers: {
