@@ -21,6 +21,11 @@ variable "lambda_zip_path" {
   type        = string
 }
 
+variable "source_code_hash" {
+  description = "Base64-encoded SHA256 hash of the Lambda deployment package"
+  type        = string
+}
+
 variable "secrets_name" {
   description = "Name of the AWS Secrets Manager secret containing API keys"
   type        = string

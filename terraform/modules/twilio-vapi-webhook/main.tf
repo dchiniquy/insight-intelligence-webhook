@@ -65,7 +65,7 @@ resource "aws_lambda_function" "webhook" {
   runtime         = "nodejs18.x"
   timeout         = 30
 
-  source_code_hash = filebase64sha256(var.lambda_zip_path)
+  source_code_hash = var.source_code_hash
 
   environment {
     variables = {
