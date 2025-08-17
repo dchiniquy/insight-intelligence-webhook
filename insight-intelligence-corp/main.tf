@@ -22,7 +22,7 @@ provider "aws" {
 # Build Lambda deployment package
 resource "null_resource" "lambda_build" {
   triggers = {
-    lambda_code_hash = data.archive_file.lambda_zip.output_base64sha256
+    package_json_hash = filemd5("${path.module}/package.json")
   }
 
   provisioner "local-exec" {
@@ -46,6 +46,7 @@ module "twilio_vapi_webhook" {
   project_name        = var.project_name
   environment         = var.environment
   lambda_zip_path     = data.archive_file.lambda_zip.output_path
+  source_code_hash    = data.archive_file.lambda_zip.output_base64sha256
   secrets_name        = var.secrets_name
   vapi_api_key        = var.vapi_api_key
   vapi_endpoint       = var.vapi_endpoint
