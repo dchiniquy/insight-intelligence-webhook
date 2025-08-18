@@ -35,6 +35,10 @@
               "value": "={{$json.body.message.toolCalls[0].function.arguments.attendee_name || $json.message.toolCalls[0].function.arguments.attendee_email}}"
             },
             {
+              "name": "attendee_phone",
+              "value": "={{$json.body.message.toolCalls[0].function.arguments.attendee_phone || 'Not provided'}}"
+            },
+            {
               "name": "start_date",
               "value": "={{$json.body.message.toolCalls[0].function.arguments.start_date}}"
             },
@@ -69,11 +73,11 @@
           "string": [
             {
               "name": "start_datetime",
-              "value": "={{$node['Extract Data'].json['start_date']}}T{{$node['Extract Data'].json['start_time']}}:00.000Z"
+              "value": "={{$node['Extract Data'].json['start_date']}}T{{$node['Extract Data'].json['start_time']}}:00"
             },
             {
               "name": "end_datetime",
-              "value": "={{DateTime.fromISO($node['Extract Data'].json['start_date'] + 'T' + $node['Extract Data'].json['start_time'] + ':00.000Z').plus({minutes: parseInt($node['Extract Data'].json['duration'])}).toISO()}}"
+              "value": "={{DateTime.fromISO($node['Extract Data'].json['start_date'] + 'T' + $node['Extract Data'].json['start_time'] + ':00').plus({minutes: parseInt($node['Extract Data'].json['duration'])}).toISO().slice(0, 19)}}"
             },
             {
               "name": "attendee_email",
@@ -82,6 +86,10 @@
             {
               "name": "attendee_name",
               "value": "={{$node['Extract Data'].json['attendee_name']}}"
+            },
+            {
+              "name": "attendee_phone",
+              "value": "={{$node['Extract Data'].json['attendee_phone']}}"
             },
             {
               "name": "meeting_title",
@@ -108,7 +116,7 @@
         "nodeCredentialType": "microsoftOutlookOAuth2Api",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"subject\": \"{{$node['Extract Data'].json['meeting_title']}}\",\n  \"body\": {\n    \"contentType\": \"HTML\",\n    \"content\": \"{{$node['Extract Data'].json['description']}}\"\n  },\n  \"start\": {\n    \"dateTime\": \"{{$node['Format DateTime'].json['start_datetime']}}\",\n    \"timeZone\": \"UTC\"\n  },\n  \"end\": {\n    \"dateTime\": \"{{$node['Format DateTime'].json['end_datetime']}}\",\n    \"timeZone\": \"UTC\"\n  },\n  \"attendees\": [\n    {\n      \"emailAddress\": {\n        \"address\": \"{{$node['Format DateTime'].json['attendee_email']}}\",\n        \"name\": \"{{$node['Format DateTime'].json['attendee_name']}}\"\n      },\n      \"type\": \"required\"\n    }\n  ],\n  \"isOnlineMeeting\": true,\n  \"onlineMeetingProvider\": \"teamsForBusiness\"\n}",
+        "jsonBody": "={\n  \"subject\": \"{{$node['Extract Data'].json['meeting_title']}}\",\n  \"body\": {\n    \"contentType\": \"HTML\",\n    \"content\": \"{{$node['Extract Data'].json['description']}}<br><br><strong>Contact Information:</strong><br>Email: {{$node['Format DateTime'].json['attendee_email']}}<br>Phone: {{$node['Format DateTime'].json['attendee_phone']}}\"\n  },\n  \"start\": {\n    \"dateTime\": \"{{$node['Format DateTime'].json['start_datetime']}}\",\n    \"timeZone\": \"America/Denver\"\n  },\n  \"end\": {\n    \"dateTime\": \"{{$node['Format DateTime'].json['end_datetime']}}\",\n    \"timeZone\": \"America/Denver\"\n  },\n  \"attendees\": [\n    {\n      \"emailAddress\": {\n        \"address\": \"{{$node['Format DateTime'].json['attendee_email']}}\",\n        \"name\": \"{{$node['Format DateTime'].json['attendee_name']}}\"\n      },\n      \"type\": \"required\"\n    }\n  ],\n  \"isOnlineMeeting\": true,\n  \"onlineMeetingProvider\": \"teamsForBusiness\"\n}",
         "options": {}
       },
       "id": "bea8dc02-e8b3-4093-a771-0359ba38e787",
@@ -142,7 +150,7 @@
           "cachedResultName": "Sales",
           "cachedResultUrl": "https://teams.cloud.microsoft/l/channel/19%3A95edcac37453492a8a7ea59347530024%40thread.tacv2/Sales?groupId=e76a435a-6314-476e-8803-85e4cf699eb1&tenantId=097d9d4d-43df-4a2c-88d6-b61de0ce4a41&allowXTenantAccess=True&ngc=True"
         },
-        "message": "A new demo has been scheduled by our AI voice assistant",
+        "message": "=📅 **New Demo Scheduled by AI Assistant**\n\n**Meeting:** {{$node['Create Teams Meeting'].json['subject']}}\n**Date & Time:** {{DateTime.fromISO($node['Create Teams Meeting'].json['start']['dateTime']).toFormat('EEEE, MMMM dd, yyyy')}} at {{DateTime.fromISO($node['Create Teams Meeting'].json['start']['dateTime']).toFormat('h:mm a')}} MT\n**Duration:** {{Math.round((DateTime.fromISO($node['Create Teams Meeting'].json['end']['dateTime']).toMillis() - DateTime.fromISO($node['Create Teams Meeting'].json['start']['dateTime']).toMillis()) / 60000)}} minutes\n**Attendee:** {{$node['Format DateTime'].json['attendee_name']}}\n**Email:** {{$node['Format DateTime'].json['attendee_email']}}\n**Phone:** {{$node['Format DateTime'].json['attendee_phone']}}\n\n**Teams Meeting Link:** [Join Meeting]({{$node['Create Teams Meeting'].json['onlineMeeting']['joinUrl']}})\n\n*Scheduled automatically via Tia, our AI voice assistant* 🤖",
         "options": {}
       },
       "id": "08c22037-2f21-45e2-be45-b40e571a6ef7",
@@ -234,7 +242,9 @@
             "node": "Send Teams Notification",
             "type": "main",
             "index": 0
-          },
+          }
+        ],
+        [
           {
             "node": "Respond Error",
             "type": "main",
@@ -245,6 +255,13 @@
     },
     "Send Teams Notification": {
       "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Respond Success",
