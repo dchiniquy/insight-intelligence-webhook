@@ -1,0 +1,294 @@
+{
+  "name": "insight-intelligence-website-form",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "website-form-submission",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "34662a4f-9863-472e-8795-76539446876a",
+      "name": "Website Form Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        336
+      ],
+      "webhookId": "auto-generated"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "name",
+              "value": "={{$json.body.name || $json.body.full_name || ($json.body.firstName && $json.body.lastName ? $json.body.firstName + ' ' + $json.body.lastName : ($json.body.firstName || $json.body.lastName || 'Name not provided'))}}"
+            },
+            {
+              "name": "email",
+              "value": "={{$json.body.email || $json.body.email_address || 'Email not provided'}}"
+            },
+            {
+              "name": "phone",
+              "value": "={{$json.body.phone || $json.body.phone_number || $json.body.phoneNumber || 'Phone not provided'}}"
+            },
+            {
+              "name": "company",
+              "value": "={{$json.body.company || $json.body.company_name || $json.body.organization || 'Company not provided'}}"
+            },
+            {
+              "name": "industry",
+              "value": "={{$json.body.industry || $json.body.industry_type || $json.body.business_type || $json.body.sector || 'Industry not provided'}}"
+            },
+            {
+              "name": "message",
+              "value": "={{$json.body.message || $json.body.comments || $json.body.inquiry || $json.body.description || 'No message provided'}}"
+            },
+            {
+              "name": "form_type",
+              "value": "={{$json.body.form_type || $json.body.formType || 'contact'}}"
+            },
+            {
+              "name": "source_page",
+              "value": "={{$json.body.source || $json.body.page || $json.body.referrer || 'Website'}}"
+            },
+            {
+              "name": "submission_time",
+              "value": "={{DateTime.now().toISO()}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5b9e7712-ba5a-4dbd-83d6-fb2e24f3056c",
+      "name": "Extract Form Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "firstname",
+              "value": "={{$node['Extract Form Data'].json['name'] && $node['Extract Form Data'].json['name'] !== 'Name not provided' ? $node['Extract Form Data'].json['name'].trim().split(' ')[0] : 'Unknown'}}"
+            },
+            {
+              "name": "lastname",
+              "value": "={{$node['Extract Form Data'].json['name'] && $node['Extract Form Data'].json['name'] !== 'Name not provided' && $node['Extract Form Data'].json['name'].trim().split(' ').length > 1 ? $node['Extract Form Data'].json['name'].trim().split(' ').slice(1).join(' ') : 'Unknown'}}"
+            },
+            {
+              "name": "full_name",
+              "value": "={{$node['Extract Form Data'].json['name']}}"
+            },
+            {
+              "name": "email",
+              "value": "={{$node['Extract Form Data'].json['email'] !== 'Email not provided' ? $node['Extract Form Data'].json['email'] : ''}}"
+            },
+            {
+              "name": "phone",
+              "value": "={{$node['Extract Form Data'].json['phone'] !== 'Phone not provided' ? $node['Extract Form Data'].json['phone'] : ''}}"
+            },
+            {
+              "name": "company",
+              "value": "={{$node['Extract Form Data'].json['company'] !== 'Company not provided' ? $node['Extract Form Data'].json['company'] : ''}}"
+            },
+            {
+              "name": "industry",
+              "value": "={{$node['Extract Form Data'].json['industry'] !== 'Industry not provided' ? $node['Extract Form Data'].json['industry'] : ''}}"
+            },
+            {
+              "name": "message",
+              "value": "={{$node['Extract Form Data'].json['message'] !== 'No message provided' ? $node['Extract Form Data'].json['message'] : ''}}"
+            },
+            {
+              "name": "form_type",
+              "value": "={{$node['Extract Form Data'].json['form_type']}}"
+            },
+            {
+              "name": "source_page",
+              "value": "={{$node['Extract Form Data'].json['source_page']}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "93f803d6-dd47-475a-9ecc-4dcbcb300a50",
+      "name": "Process Name Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "email": "={{ $json.email }}",
+        "additionalFields": {
+          "companyName": "={{ $json.body.company }}",
+          "firstName": "={{ $json.firstname }}",
+          "lastName": "={{ $json.lastname }}",
+          "industry": "={{$node['Process Name Fields'].json['industry']}}",
+          "message": "={{$node['Process Name Fields'].json['message']}}",
+          "phoneNumber": "={{ $json.phone }}"
+        },
+        "options": {}
+      },
+      "id": "4bc66300-10fd-4da8-9a81-85b81a0b567f",
+      "name": "Create HubSpot Contact",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2,
+      "position": [
+        160,
+        256
+      ],
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "687iXSpXdMKwW2N5",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "channelMessage",
+        "teamId": {
+          "__rl": true,
+          "value": "e76a435a-6314-476e-8803-85e4cf699eb1",
+          "mode": "list",
+          "cachedResultName": "Insight Intelligence"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "19:95edcac37453492a8a7ea59347530024@thread.tacv2",
+          "mode": "list",
+          "cachedResultName": "Sales"
+        },
+        "message": "=📝 **New Website Lead Added to HubSpot**\n\n**Contact Information:**\n• **Name:** {{$node['Extract Form Data'].json['name']}}\n• **Email:** {{$node['Extract Form Data'].json['email']}}\n• **Phone:** {{$node['Extract Form Data'].json['phone']}}\n• **Company:** {{$node['Extract Form Data'].json['company']}}\n• **Industry:** {{$node['Extract Form Data'].json['industry']}}\n\n**HubSpot Details:**\n• **Contact ID:** {{$node['Create HubSpot Contact'].json['id']}}\n• **HubSpot URL:** [View Contact](https://app.hubspot.com/contacts/{{$node['Create HubSpot Contact'].json['portalId']}}/contact/{{$node['Create HubSpot Contact'].json['id']}})\n• **Lead Source:** {{$node['Extract Form Data'].json['source_page']}}\n• **Form Type:** {{$node['Extract Form Data'].json['form_type']}}\n• **Submitted:** {{DateTime.fromISO($node['Extract Form Data'].json['submission_time']).toFormat('MMMM dd, yyyy \\u0061\\u0074 h:mm a')}}\n\n**Message:**\n{{$node['Extract Form Data'].json['message']}}\n\n---\n*New lead automatically added to HubSpot CRM* 🌐",
+        "options": {}
+      },
+      "id": "8c44256b-54c8-4d95-bf83-a5782a92f7dc",
+      "name": "Send Teams Notification",
+      "type": "n8n-nodes-base.microsoftTeams",
+      "typeVersion": 2,
+      "position": [
+        400,
+        256
+      ],
+      "webhookId": "c87f7b4a-3c92-499a-974f-239a5b8ebe58",
+      "credentials": {
+        "microsoftTeamsOAuth2Api": {
+          "id": "6pTc2hJVUNyTyOzc",
+          "name": "Microsoft Teams account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"success\",\n  \"message\": \"Thank you for your submission! We'll be in touch soon.\",\n  \"submission_id\": \"{{$node['Extract Form Data'].json['submission_time']}}\",\n  \"hubspot_contact_id\": \"{{$node['Create HubSpot Contact'].json['id']}}\"\n}",
+        "options": {}
+      },
+      "id": "c5867585-e68e-4fe7-ac8b-41a210767d18",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        400,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"error\",\n  \"message\": \"Sorry, there was an issue processing your submission. Please try again or contact us directly.\",\n  \"error\": \"{{$json.message || 'Unknown error'}}\"\n}",
+        "options": {}
+      },
+      "id": "d6791121-6d31-45b1-b732-6de138593df2",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        160,
+        496
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Website Form Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Form Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Form Data": {
+      "main": [
+        [
+          {
+            "node": "Process Name Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Name Fields": {
+      "main": [
+        [
+          {
+            "node": "Create HubSpot Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create HubSpot Contact": {
+      "main": [
+        [
+          {
+            "node": "Send Teams Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Teams Notification": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d1ba8ebc-0abb-4c86-b351-13d4b10f88e9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "99aaeba6b75257ee350bb8eb8800a228cb7b97e21f9b2e1e88ec25277f30b9a0"
+  },
+  "id": "lOpyVU3tNIIUjiU2",
+  "tags": []
+}
