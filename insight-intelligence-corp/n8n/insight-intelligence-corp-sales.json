@@ -1,0 +1,286 @@
+{
+  "name": "insight-intelligence-corp-sales",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "vapi-teams-meeting",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "23148afc-a60e-4741-964b-6b3b982d30a1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        32,
+        320
+      ],
+      "webhookId": "auto-generated"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "meeting_title",
+              "value": "={{ $json.body.message.toolCalls[0].function.arguments.meeting_title }}"
+            },
+            {
+              "name": "attendee_email",
+              "value": "={{$json.body.message.toolCalls[0].function.arguments.attendee_email}}"
+            },
+            {
+              "name": "attendee_name",
+              "value": "={{$json.body.message.toolCalls[0].function.arguments.attendee_name || $json.message.toolCalls[0].function.arguments.attendee_email}}"
+            },
+            {
+              "name": "attendee_phone",
+              "value": "={{$json.body.message.toolCalls[0].function.arguments.attendee_phone || 'Not provided'}}"
+            },
+            {
+              "name": "start_date",
+              "value": "={{$json.body.message.toolCalls[0].function.arguments.start_date}}"
+            },
+            {
+              "name": "start_time",
+              "value": "={{$json.body.message.toolCalls[0].function.arguments.start_time}}"
+            },
+            {
+              "name": "duration",
+              "value": "={{$json.body.message.toolCalls[0].function.arguments.duration || 30}}"
+            },
+            {
+              "name": "description",
+              "value": "={{$json.body.message.toolCalls[0].function.arguments.description || 'Meeting scheduled via Vapi AI'}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ba098528-b9a4-4d91-92fe-a8c3acccc3e5",
+      "name": "Extract Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        256,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "start_datetime",
+              "value": "={{$node['Extract Data'].json['start_date']}}T{{$node['Extract Data'].json['start_time']}}:00"
+            },
+            {
+              "name": "end_datetime",
+              "value": "={{DateTime.fromISO($node['Extract Data'].json['start_date'] + 'T' + $node['Extract Data'].json['start_time'] + ':00').plus({minutes: parseInt($node['Extract Data'].json['duration'])}).toISO().slice(0, 19)}}"
+            },
+            {
+              "name": "attendee_email",
+              "value": "={{$node['Extract Data'].json['attendee_email']}}"
+            },
+            {
+              "name": "attendee_name",
+              "value": "={{$node['Extract Data'].json['attendee_name']}}"
+            },
+            {
+              "name": "attendee_phone",
+              "value": "={{$node['Extract Data'].json['attendee_phone']}}"
+            },
+            {
+              "name": "meeting_title",
+              "value": "={{$node['Extract Data'].json['meeting_title']}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7de388ee-4733-42d2-b304-bc761c54fd1a",
+      "name": "Format DateTime",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        480,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.microsoft.com/v1.0/me/events",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftOutlookOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"subject\": \"{{$node['Extract Data'].json['meeting_title']}}\",\n  \"body\": {\n    \"contentType\": \"HTML\",\n    \"content\": \"{{$node['Extract Data'].json['description']}}<br><br><strong>Contact Information:</strong><br>Email: {{$node['Format DateTime'].json['attendee_email']}}<br>Phone: {{$node['Format DateTime'].json['attendee_phone']}}\"\n  },\n  \"start\": {\n    \"dateTime\": \"{{$node['Format DateTime'].json['start_datetime']}}\",\n    \"timeZone\": \"America/Denver\"\n  },\n  \"end\": {\n    \"dateTime\": \"{{$node['Format DateTime'].json['end_datetime']}}\",\n    \"timeZone\": \"America/Denver\"\n  },\n  \"attendees\": [\n    {\n      \"emailAddress\": {\n        \"address\": \"{{$node['Format DateTime'].json['attendee_email']}}\",\n        \"name\": \"{{$node['Format DateTime'].json['attendee_name']}}\"\n      },\n      \"type\": \"required\"\n    }\n  ],\n  \"isOnlineMeeting\": true,\n  \"onlineMeetingProvider\": \"teamsForBusiness\"\n}",
+        "options": {}
+      },
+      "id": "bea8dc02-e8b3-4093-a771-0359ba38e787",
+      "name": "Create Teams Meeting",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        704,
+        320
+      ],
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "p0HtLMzdJQwlf6YW",
+          "name": "Microsoft Outlook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "channelMessage",
+        "teamId": {
+          "__rl": true,
+          "value": "e76a435a-6314-476e-8803-85e4cf699eb1",
+          "mode": "list",
+          "cachedResultName": "Insight Intelligence"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "19:95edcac37453492a8a7ea59347530024@thread.tacv2",
+          "mode": "list",
+          "cachedResultName": "Sales",
+          "cachedResultUrl": "https://teams.cloud.microsoft/l/channel/19%3A95edcac37453492a8a7ea59347530024%40thread.tacv2/Sales?groupId=e76a435a-6314-476e-8803-85e4cf699eb1&tenantId=097d9d4d-43df-4a2c-88d6-b61de0ce4a41&allowXTenantAccess=True&ngc=True"
+        },
+        "message": "=📅 **New Demo Scheduled by AI Assistant**\n\n**Meeting:** {{$node['Create Teams Meeting'].json['subject']}}\n**Date & Time:** {{DateTime.fromISO($node['Create Teams Meeting'].json['start']['dateTime']).toFormat('EEEE, MMMM dd, yyyy')}} at {{DateTime.fromISO($node['Create Teams Meeting'].json['start']['dateTime']).toFormat('h:mm a')}} MT\n**Duration:** {{Math.round((DateTime.fromISO($node['Create Teams Meeting'].json['end']['dateTime']).toMillis() - DateTime.fromISO($node['Create Teams Meeting'].json['start']['dateTime']).toMillis()) / 60000)}} minutes\n**Attendee:** {{$node['Format DateTime'].json['attendee_name']}}\n**Email:** {{$node['Format DateTime'].json['attendee_email']}}\n**Phone:** {{$node['Format DateTime'].json['attendee_phone']}}\n\n**Teams Meeting Link:** [Join Meeting]({{$node['Create Teams Meeting'].json['onlineMeeting']['joinUrl']}})\n\n*Scheduled automatically via Tia, our AI voice assistant* 🤖",
+        "options": {}
+      },
+      "id": "08c22037-2f21-45e2-be45-b40e571a6ef7",
+      "name": "Send Teams Notification",
+      "type": "n8n-nodes-base.microsoftTeams",
+      "typeVersion": 2,
+      "position": [
+        912,
+        240
+      ],
+      "webhookId": "ab119688-b35f-4394-9e8e-fe5dc2f4bfe9",
+      "credentials": {
+        "microsoftTeamsOAuth2Api": {
+          "id": "6pTc2hJVUNyTyOzc",
+          "name": "Microsoft Teams account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"success\",\n  \"message\": \"Meeting scheduled successfully\",\n  \"meeting_details\": {\n    \"title\": \"{{$node['Create Teams Meeting'].json['subject']}}\",\n    \"start_time\": \"{{$node['Create Teams Meeting'].json['start']['dateTime']}}\",\n    \"teams_url\": \"{{$node['Create Teams Meeting'].json['onlineMeeting']['joinUrl']}}\",\n    \"meeting_id\": \"{{$node['Create Teams Meeting'].json['id']}}\"\n  }\n}",
+        "options": {}
+      },
+      "id": "19a37231-55ed-4a3b-ab7b-33230bc03a47",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"error\",\n  \"message\": \"Sorry, I couldn't schedule the meeting. Please try again.\",\n  \"error\": \"{{$json.message || 'Unknown error'}}\"\n}",
+        "options": {}
+      },
+      "id": "86dccbfb-8c6e-4ecf-87ec-50d57f3e4b0b",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        912,
+        496
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Data": {
+      "main": [
+        [
+          {
+            "node": "Format DateTime",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format DateTime": {
+      "main": [
+        [
+          {
+            "node": "Create Teams Meeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Teams Meeting": {
+      "main": [
+        [
+          {
+            "node": "Send Teams Notification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Teams Notification": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "97cb86d8-2e97-462f-8010-99e384956686",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "99aaeba6b75257ee350bb8eb8800a228cb7b97e21f9b2e1e88ec25277f30b9a0"
+  },
+  "id": "GoL0DEwixjYvFguA",
+  "tags": []
+}

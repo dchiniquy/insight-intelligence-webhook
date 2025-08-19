@@ -1,0 +1,265 @@
+{
+  "info": {
+    "name": "Insight Intelligence - Website Form Tests",
+    "description": "Test collection for website form submission workflow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Contact Form - Complete Data",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"John Smith\",\n  \"email\": \"john.smith@example.com\",\n  \"phone\": \"(555) 123-4567\",\n  \"company\": \"ABC Corporation\",\n  \"message\": \"I'm interested in learning more about your AI solutions for small businesses. We currently have 25 employees and are looking to automate our customer service processes.\",\n  \"form_type\": \"contact\",\n  \"source\": \"/contact-us\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-form-submission",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-form-submission"
+          ]
+        },
+        "description": "Test with complete contact form data including all fields"
+      }
+    },
+    {
+      "name": "Demo Request Form",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"full_name\": \"Sarah Johnson\",\n  \"email_address\": \"sarah.johnson@techstartup.com\",\n  \"phone_number\": \"555-987-6543\",\n  \"company_name\": \"Tech Startup Inc\",\n  \"comments\": \"We're a growing tech startup and would like to schedule a demo to see how your AI solutions can help us scale our operations more efficiently.\",\n  \"formType\": \"demo_request\",\n  \"page\": \"/request-demo\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-form-submission",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-form-submission"
+          ]
+        },
+        "description": "Test with demo request form using alternative field names"
+      }
+    },
+    {
+      "name": "Newsletter Signup - Minimal Data",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"newsletter@subscriber.com\",\n  \"firstName\": \"Alex\",\n  \"lastName\": \"Chen\",\n  \"form_type\": \"newsletter\",\n  \"referrer\": \"/blog/ai-trends-2025\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-form-submission",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-form-submission"
+          ]
+        },
+        "description": "Test with minimal data (newsletter signup) to test fallback values"
+      }
+    },
+    {
+      "name": "Pricing Inquiry",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Michael Rodriguez\",\n  \"email\": \"michael@retailchain.com\",\n  \"phoneNumber\": \"+1-800-555-0199\",\n  \"organization\": \"National Retail Chain\",\n  \"inquiry\": \"We operate 150+ retail locations and are interested in your pricing for enterprise AI solutions. Specifically looking at customer analytics and inventory optimization.\",\n  \"form_type\": \"pricing\",\n  \"source\": \"/pricing\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-form-submission",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-form-submission"
+          ]
+        },
+        "description": "Test with pricing inquiry using different field name variations"
+      }
+    },
+    {
+      "name": "Support Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Lisa Wong\",\n  \"email\": \"lisa.wong@existingclient.com\",\n  \"phone\": \"555.444.3333\",\n  \"company\": \"Existing Client LLC\",\n  \"description\": \"We're experiencing issues with our AI chatbot integration. The responses seem delayed and sometimes don't match our knowledge base. Need technical support.\",\n  \"form_type\": \"support\",\n  \"source\": \"/support\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-form-submission",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-form-submission"
+          ]
+        },
+        "description": "Test support request form submission"
+      }
+    },
+    {
+      "name": "Partnership Inquiry",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"David Kim\",\n  \"email\": \"partnerships@aicompany.com\",\n  \"phone\": \"(415) 555-0123\",\n  \"company\": \"AI Solutions Partner\",\n  \"message\": \"We're an AI consulting firm interested in exploring partnership opportunities. We work with mid-market companies and think there could be synergies between our services.\",\n  \"form_type\": \"partnership\",\n  \"source\": \"/partners\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-form-submission",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-form-submission"
+          ]
+        },
+        "description": "Test partnership inquiry form"
+      }
+    },
+    {
+      "name": "Invalid Email Test",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"invalid-email\",\n  \"phone\": \"555-0000\",\n  \"company\": \"Test Company\",\n  \"message\": \"This is a test with invalid email format to see how the system handles it.\",\n  \"form_type\": \"test\",\n  \"source\": \"/test\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-form-submission",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-form-submission"
+          ]
+        },
+        "description": "Test with invalid email format to test error handling"
+      }
+    },
+    {
+      "name": "Missing Required Fields",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"This submission is missing name and email to test fallback handling\",\n  \"form_type\": \"incomplete\",\n  \"source\": \"/test-incomplete\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-form-submission",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-form-submission"
+          ]
+        },
+        "description": "Test with missing required fields to test fallback values"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://your-n8n-instance.com",
+      "description": "Replace with your actual n8n webhook URL"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set timestamp for unique submissions",
+          "pm.globals.set('timestamp', Date.now());"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Basic response validation",
+          "pm.test('Status code is 200', function () {",
+          "    pm.response.to.have.status(200);",
+          "});",
+          "",
+          "pm.test('Response has status field', function () {",
+          "    const jsonData = pm.response.json();",
+          "    pm.expect(jsonData).to.have.property('status');",
+          "});",
+          "",
+          "pm.test('Response time is reasonable', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "});"
+        ]
+      }
+    }
+  ]
+}
