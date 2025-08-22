@@ -1,0 +1,345 @@
+{
+  "info": {
+    "name": "Insight Intelligence - Demo Form Call Tests",
+    "description": "Test collection for demo form submission workflow that triggers VAPI outbound calls",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Demo Request - Complete Data",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Sarah Mitchell\",\n  \"email\": \"sarah.mitchell@techcorp.com\",\n  \"phone\": \"(555) 123-4567\",\n  \"company\": \"TechCorp Solutions\",\n  \"industry\": \"Technology Services\",\n  \"message\": \"We're looking to implement AI solutions to automate our customer support processes. Currently handling 200+ tickets daily and need to scale efficiently.\",\n  \"call_preference\": \"Morning (9-11 AM)\",\n  \"urgency\": \"high\",\n  \"form_type\": \"demo_request\",\n  \"source\": \"/request-demo\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/demo-form-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "demo-form-call-request"
+          ]
+        },
+        "description": "Test with complete demo request data including all optional fields"
+      }
+    },
+    {
+      "name": "Demo Request - Alternative Field Names",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"full_name\": \"Michael Rodriguez\",\n  \"email_address\": \"michael@retailplus.com\",\n  \"phone_number\": \"555-987-6543\",\n  \"company_name\": \"RetailPlus Inc\",\n  \"business_type\": \"Retail\",\n  \"comments\": \"Interested in AI for inventory management and customer analytics. We operate 15 retail locations.\",\n  \"preferred_time\": \"Afternoon\",\n  \"priority\": \"normal\",\n  \"formType\": \"demo_request\",\n  \"page\": \"/solutions/retail\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/demo-form-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "demo-form-call-request"
+          ]
+        },
+        "description": "Test with alternative field naming conventions"
+      }
+    },
+    {
+      "name": "Demo Request - Minimal Required Data",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"John Smith\",\n  \"email\": \"john.smith@startup.io\",\n  \"phone\": \"+1-800-555-0199\",\n  \"company\": \"AI Startup\",\n  \"message\": \"Need demo for AI automation tools\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/demo-form-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "demo-form-call-request"
+          ]
+        },
+        "description": "Test with minimal required data to verify fallback values work"
+      }
+    },
+    {
+      "name": "Enterprise Demo Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Lisa Chen\",\n  \"email\": \"lisa.chen@enterprise.com\",\n  \"phoneNumber\": \"(415) 555-0123\",\n  \"organization\": \"Enterprise Manufacturing Corp\",\n  \"sector\": \"Manufacturing\",\n  \"inquiry\": \"We need AI solutions for predictive maintenance and quality control across 5 manufacturing facilities. Looking to reduce downtime by 30%.\",\n  \"best_time\": \"ASAP\",\n  \"urgency\": \"high\",\n  \"form_type\": \"enterprise_demo\",\n  \"referrer\": \"/enterprise-solutions\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/demo-form-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "demo-form-call-request"
+          ]
+        },
+        "description": "Test enterprise-level demo request with complex requirements"
+      }
+    },
+    {
+      "name": "Healthcare Demo Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"Dr. Amanda\",\n  \"lastName\": \"Williams\",\n  \"email\": \"awilliams@healthcareclinic.com\",\n  \"phone\": \"555.444.3333\",\n  \"company\": \"Comprehensive Healthcare Clinic\",\n  \"industry_type\": \"Healthcare\",\n  \"description\": \"Looking for AI solutions to streamline patient scheduling, reduce wait times, and improve patient communication. We serve 500+ patients weekly.\",\n  \"call_preference\": \"End of day (4-6 PM)\",\n  \"urgency\": \"normal\",\n  \"form_type\": \"healthcare_demo\",\n  \"source\": \"/healthcare-solutions\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/demo-form-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "demo-form-call-request"
+          ]
+        },
+        "description": "Test healthcare industry demo request with firstName/lastName format"
+      }
+    },
+    {
+      "name": "Financial Services Demo",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Robert Thompson\",\n  \"email\": \"rthompson@financialgroup.com\",\n  \"phone\": \"(212) 555-7890\",\n  \"company\": \"Metropolitan Financial Group\",\n  \"industry\": \"Financial Services\",\n  \"message\": \"Interested in AI for fraud detection, customer risk assessment, and automated compliance reporting. Need to ensure FINRA compliance.\",\n  \"call_preference\": \"Morning before 10 AM EST\",\n  \"urgency\": \"normal\",\n  \"form_type\": \"financial_demo\",\n  \"source\": \"/financial-services\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/demo-form-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "demo-form-call-request"
+          ]
+        },
+        "description": "Test financial services demo with compliance requirements"
+      }
+    },
+    {
+      "name": "Invalid Phone Number Test",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@invalid-phone.com\",\n  \"phone\": \"123\",\n  \"company\": \"Test Company\",\n  \"message\": \"This is a test with invalid phone number to verify validation\",\n  \"form_type\": \"test\",\n  \"source\": \"/test\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/demo-form-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "demo-form-call-request"
+          ]
+        },
+        "description": "Test with invalid phone number to verify validation logic"
+      }
+    },
+    {
+      "name": "Missing Phone Number Test",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"No Phone User\",\n  \"email\": \"nophone@example.com\",\n  \"company\": \"No Phone Company\",\n  \"message\": \"This submission has no phone number to test validation\",\n  \"form_type\": \"test\",\n  \"source\": \"/test-no-phone\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/demo-form-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "demo-form-call-request"
+          ]
+        },
+        "description": "Test with missing phone number to verify error handling"
+      }
+    },
+    {
+      "name": "International Phone Format",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Global Customer\",\n  \"email\": \"global@international.co.uk\",\n  \"phone\": \"+44 20 7946 0958\",\n  \"company\": \"International Solutions Ltd\",\n  \"industry\": \"Consulting\",\n  \"message\": \"Interested in AI solutions for our UK operations. Need to understand US market capabilities.\",\n  \"call_preference\": \"UK business hours (9 AM - 5 PM GMT)\",\n  \"urgency\": \"normal\",\n  \"form_type\": \"international_demo\",\n  \"source\": \"/international\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/demo-form-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "demo-form-call-request"
+          ]
+        },
+        "description": "Test with international phone format"
+      }
+    },
+    {
+      "name": "Urgent Demo Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Emergency Contact\",\n  \"email\": \"urgent@criticalcompany.com\",\n  \"phone\": \"(911) 555-0000\",\n  \"company\": \"Critical Operations Inc\",\n  \"industry\": \"Emergency Services\",\n  \"message\": \"URGENT: System failure, need immediate AI automation for backup processes. Current systems down, need solution ASAP.\",\n  \"call_preference\": \"Immediately\",\n  \"urgency\": \"critical\",\n  \"form_type\": \"emergency_demo\",\n  \"source\": \"/emergency-support\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/demo-form-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "demo-form-call-request"
+          ]
+        },
+        "description": "Test urgent/critical priority demo request"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://your-n8n-instance.com",
+      "description": "Replace with your actual n8n webhook URL"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set timestamp for unique submissions",
+          "pm.globals.set('timestamp', Date.now());",
+          "",
+          "// Generate unique test data",
+          "const testId = Math.random().toString(36).substr(2, 9);",
+          "pm.globals.set('testId', testId);"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Basic response validation",
+          "pm.test('Status code is 200', function () {",
+          "    pm.response.to.have.status(200);",
+          "});",
+          "",
+          "pm.test('Response has status field', function () {",
+          "    const jsonData = pm.response.json();",
+          "    pm.expect(jsonData).to.have.property('status');",
+          "});",
+          "",
+          "pm.test('Response time is reasonable', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(10000);",
+          "});",
+          "",
+          "// Success response validation",
+          "if (pm.response.json().status === 'success') {",
+          "    pm.test('Success response has required fields', function () {",
+          "        const jsonData = pm.response.json();",
+          "        pm.expect(jsonData).to.have.property('call_initiated');",
+          "        pm.expect(jsonData).to.have.property('vapi_call_id');",
+          "        pm.expect(jsonData).to.have.property('hubspot_contact_id');",
+          "        pm.expect(jsonData).to.have.property('estimated_call_time');",
+          "    });",
+          "}",
+          "",
+          "// Error response validation",
+          "if (pm.response.json().status === 'error') {",
+          "    pm.test('Error response has error field', function () {",
+          "        const jsonData = pm.response.json();",
+          "        pm.expect(jsonData).to.have.property('error');",
+          "    });",
+          "}",
+          "",
+          "// Log response for debugging",
+          "console.log('Response:', pm.response.json());"
+        ]
+      }
+    }
+  ]
+}
