@@ -1,0 +1,411 @@
+{
+  "info": {
+    "name": "N8N AI Chatbot Tests",
+    "description": "Test collection for insight-intelligence-ai-chatbot-handler workflow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Basic Chat - Standard Response",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"Hello, what can you help me with?\",\n  \"sessionId\": \"postman_session_001\",\n  \"userId\": \"postman_user_001\",\n  \"timestamp\": \"{{$timestamp}}\",\n  \"url\": \"https://test-website.com\",\n  \"userAgent\": \"PostmanRuntime/7.28.0\",\n  \"messageCount\": 1\n}"
+        },
+        "url": {
+          "raw": "{{chatbot_webhook_url}}"
+        },
+        "description": "Test basic conversation flow with standard AI response"
+      }
+    },
+    {
+      "name": "Company Information Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"Tell me about Insight Intelligence and your AI solutions\",\n  \"sessionId\": \"postman_session_002\",\n  \"userId\": \"postman_user_002\",\n  \"timestamp\": \"{{$timestamp}}\",\n  \"url\": \"https://test-website.com/about\",\n  \"userAgent\": \"PostmanRuntime/7.28.0\",\n  \"messageCount\": 1\n}"
+        },
+        "url": {
+          "raw": "{{chatbot_webhook_url}}"
+        },
+        "description": "Test company information and AI solutions inquiry"
+      }
+    },
+    {
+      "name": "Demo Request - Lead Intent",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"I want to schedule a demo for my company. We're interested in AI automation.\",\n  \"sessionId\": \"postman_session_003\",\n  \"userId\": \"postman_user_003\",\n  \"timestamp\": \"{{$timestamp}}\",\n  \"url\": \"https://test-website.com/demo\",\n  \"userAgent\": \"PostmanRuntime/7.28.0\",\n  \"messageCount\": 2\n}"
+        },
+        "url": {
+          "raw": "{{chatbot_webhook_url}}"
+        },
+        "description": "Test lead intent detection with demo request"
+      }
+    },
+    {
+      "name": "Pricing Inquiry - Lead Intent",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"What are your pricing options? I need to understand costs for a 50-person company.\",\n  \"sessionId\": \"postman_session_004\",\n  \"userId\": \"postman_user_004\",\n  \"timestamp\": \"{{$timestamp}}\",\n  \"url\": \"https://test-website.com/pricing\",\n  \"userAgent\": \"PostmanRuntime/7.28.0\",\n  \"messageCount\": 1\n}"
+        },
+        "url": {
+          "raw": "{{chatbot_webhook_url}}"
+        },
+        "description": "Test pricing inquiry that should trigger lead qualification"
+      }
+    },
+    {
+      "name": "Voice Call Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"Can someone call me to discuss your AI solutions? I'd prefer to talk on the phone.\",\n  \"sessionId\": \"postman_session_005\",\n  \"userId\": \"postman_user_005\",\n  \"timestamp\": \"{{$timestamp}}\",\n  \"url\": \"https://test-website.com/contact\",\n  \"userAgent\": \"PostmanRuntime/7.28.0\",\n  \"messageCount\": 3\n}"
+        },
+        "url": {
+          "raw": "{{chatbot_webhook_url}}"
+        },
+        "description": "Test voice call intent that should trigger VAPI integration"
+      }
+    },
+    {
+      "name": "Sales Contact Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"I want to talk to your sales team about implementing AI for customer service automation\",\n  \"sessionId\": \"postman_session_006\",\n  \"userId\": \"postman_user_006\",\n  \"timestamp\": \"{{$timestamp}}\",\n  \"url\": \"https://test-website.com/solutions\",\n  \"userAgent\": \"PostmanRuntime/7.28.0\",\n  \"messageCount\": 1\n}"
+        },
+        "url": {
+          "raw": "{{chatbot_webhook_url}}"
+        },
+        "description": "Test sales contact request with specific AI solution mention"
+      }
+    },
+    {
+      "name": "Technical Question - Standard",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"How does AI process automation work? What kind of tasks can it handle?\",\n  \"sessionId\": \"postman_session_007\",\n  \"userId\": \"postman_user_007\",\n  \"timestamp\": \"{{$timestamp}}\",\n  \"url\": \"https://test-website.com/faq\",\n  \"userAgent\": \"PostmanRuntime/7.28.0\",\n  \"messageCount\": 2\n}"
+        },
+        "url": {
+          "raw": "{{chatbot_webhook_url}}"
+        },
+        "description": "Test technical question about AI capabilities"
+      }
+    },
+    {
+      "name": "Meeting Schedule Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"I'd like to schedule a meeting with your team to discuss our AI implementation needs\",\n  \"sessionId\": \"postman_session_008\",\n  \"userId\": \"postman_user_008\",\n  \"timestamp\": \"{{$timestamp}}\",\n  \"url\": \"https://test-website.com/schedule\",\n  \"userAgent\": \"PostmanRuntime/7.28.0\",\n  \"messageCount\": 1\n}"
+        },
+        "url": {
+          "raw": "{{chatbot_webhook_url}}"
+        },
+        "description": "Test meeting scheduling request (lead intent)"
+      }
+    },
+    {
+      "name": "Consultation Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"I need a consultation about AI solutions for my healthcare practice. Can you help?\",\n  \"sessionId\": \"postman_session_009\",\n  \"userId\": \"postman_user_009\",\n  \"timestamp\": \"{{$timestamp}}\",\n  \"url\": \"https://test-website.com/healthcare\",\n  \"userAgent\": \"PostmanRuntime/7.28.0\",\n  \"messageCount\": 1\n}"
+        },
+        "url": {
+          "raw": "{{chatbot_webhook_url}}"
+        },
+        "description": "Test industry-specific consultation request"
+      }
+    },
+    {
+      "name": "Urgent Call Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"This is urgent - please call me immediately about your AI solutions. My current system is failing.\",\n  \"sessionId\": \"postman_session_010\",\n  \"userId\": \"postman_user_010\",\n  \"timestamp\": \"{{$timestamp}}\",\n  \"url\": \"https://test-website.com/emergency\",\n  \"userAgent\": \"PostmanRuntime/7.28.0\",\n  \"messageCount\": 1\n}"
+        },
+        "url": {
+          "raw": "{{chatbot_webhook_url}}"
+        },
+        "description": "Test urgent call request with high priority"
+      }
+    },
+    {
+      "name": "Error Test - Empty Message",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"\",\n  \"sessionId\": \"postman_session_error_001\",\n  \"userId\": \"postman_user_error\",\n  \"timestamp\": \"{{$timestamp}}\",\n  \"url\": \"https://test-website.com/error\",\n  \"userAgent\": \"PostmanRuntime/7.28.0\",\n  \"messageCount\": 1\n}"
+        },
+        "url": {
+          "raw": "{{chatbot_webhook_url}}"
+        },
+        "description": "Test error handling with empty message"
+      }
+    },
+    {
+      "name": "Error Test - Missing Fields",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"Test message with missing required fields\"\n}"
+        },
+        "url": {
+          "raw": "{{chatbot_webhook_url}}"
+        },
+        "description": "Test error handling with missing sessionId and other fields"
+      }
+    },
+    {
+      "name": "Long Conversation Test",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"I'm a small business owner with 25 employees looking for comprehensive AI solutions. We need customer service automation, process automation for our invoicing, and predictive analytics for inventory management. Can you help us understand what you offer and how to get started? We've never used AI before but are ready to implement it.\",\n  \"sessionId\": \"postman_session_long\",\n  \"userId\": \"postman_user_long\",\n  \"timestamp\": \"{{$timestamp}}\",\n  \"url\": \"https://test-website.com/comprehensive\",\n  \"userAgent\": \"PostmanRuntime/7.28.0\",\n  \"messageCount\": 1\n}"
+        },
+        "url": {
+          "raw": "{{chatbot_webhook_url}}"
+        },
+        "description": "Test with long, detailed message containing multiple intent signals"
+      }
+    },
+    {
+      "name": "Follow-up Conversation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"Thanks for that information. Can you tell me more about the implementation timeline?\",\n  \"sessionId\": \"postman_session_001\",\n  \"userId\": \"postman_user_001\",\n  \"timestamp\": \"{{$timestamp}}\",\n  \"url\": \"https://test-website.com\",\n  \"userAgent\": \"PostmanRuntime/7.28.0\",\n  \"messageCount\": 3\n}"
+        },
+        "url": {
+          "raw": "{{chatbot_webhook_url}}"
+        },
+        "description": "Test follow-up message in same session (note: same sessionId as first test)"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "chatbot_webhook_url",
+      "value": "https://your-n8n-instance.com/webhook/ai-chatbot",
+      "description": "Replace with your actual N8N chatbot webhook URL"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set dynamic timestamp",
+          "pm.globals.set('timestamp', new Date().toISOString());",
+          "",
+          "// Generate unique test ID",
+          "const testId = Math.random().toString(36).substr(2, 9);",
+          "pm.globals.set('testId', testId);",
+          "",
+          "// Log test start",
+          "console.log('🧪 Starting test:', pm.info.requestName);"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Basic response validation",
+          "pm.test('Status code is 200', function () {",
+          "    pm.response.to.have.status(200);",
+          "});",
+          "",
+          "pm.test('Response has status field', function () {",
+          "    const jsonData = pm.response.json();",
+          "    pm.expect(jsonData).to.have.property('status');",
+          "});",
+          "",
+          "pm.test('Response time is reasonable', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(15000);",
+          "});",
+          "",
+          "// Success response validation",
+          "if (pm.response.code === 200) {",
+          "    try {",
+          "        const jsonData = pm.response.json();",
+          "        ",
+          "        pm.test('Response has required fields', function () {",
+          "            pm.expect(jsonData).to.have.property('response');",
+          "            pm.expect(jsonData).to.have.property('sessionId');",
+          "            pm.expect(jsonData).to.have.property('timestamp');",
+          "        });",
+          "        ",
+          "        if (jsonData.status === 'success') {",
+          "            pm.test('Success response is properly formatted', function () {",
+          "                pm.expect(jsonData.response).to.be.a('string');",
+          "                pm.expect(jsonData.response.length).to.be.greaterThan(0);",
+          "                pm.expect(jsonData.isLead).to.be.a('boolean');",
+          "            });",
+          "            ",
+          "            // Check for lead-specific fields",
+          "            if (jsonData.isLead) {",
+          "                pm.test('Lead response has additional fields', function () {",
+          "                    // HubSpot contact ID might be present",
+          "                    if (jsonData.hubspotContactId) {",
+          "                        pm.expect(jsonData.hubspotContactId).to.be.a('string');",
+          "                    }",
+          "                });",
+          "            }",
+          "            ",
+          "            // Check for VAPI call fields",
+          "            if (jsonData.vapiCallTriggered) {",
+          "                pm.test('VAPI call response has call fields', function () {",
+          "                    pm.expect(jsonData.vapiCallTriggered).to.be.true;",
+          "                    if (jsonData.vapiCallId) {",
+          "                        pm.expect(jsonData.vapiCallId).to.be.a('string');",
+          "                    }",
+          "                });",
+          "            }",
+          "            ",
+          "            // Check quick actions",
+          "            if (jsonData.quickActions) {",
+          "                pm.test('Quick actions are properly formatted', function () {",
+          "                    pm.expect(jsonData.quickActions).to.be.an('array');",
+          "                    if (jsonData.quickActions.length > 0) {",
+          "                        pm.expect(jsonData.quickActions[0]).to.have.property('text');",
+          "                        pm.expect(jsonData.quickActions[0]).to.have.property('message');",
+          "                    }",
+          "                });",
+          "            }",
+          "        }",
+          "        ",
+          "        // Log response summary",
+          "        console.log('✅ Response Summary:');",
+          "        console.log('   Status:', jsonData.status);",
+          "        console.log('   Is Lead:', jsonData.isLead);",
+          "        console.log('   Response Length:', jsonData.response ? jsonData.response.length : 0);",
+          "        console.log('   Quick Actions:', jsonData.quickActions ? jsonData.quickActions.length : 0);",
+          "        if (jsonData.hubspotContactId) {",
+          "            console.log('   HubSpot Contact:', jsonData.hubspotContactId);",
+          "        }",
+          "        if (jsonData.vapiCallTriggered) {",
+          "            console.log('   VAPI Call Triggered:', jsonData.vapiCallTriggered);",
+          "        }",
+          "        ",
+          "    } catch (e) {",
+          "        console.log('❌ Error parsing response:', e.message);",
+          "    }",
+          "}",
+          "",
+          "// Error response validation",
+          "if (pm.response.code !== 200) {",
+          "    pm.test('Error response provides helpful information', function () {",
+          "        console.log('❌ Error Response:', pm.response.text());",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ]
+}

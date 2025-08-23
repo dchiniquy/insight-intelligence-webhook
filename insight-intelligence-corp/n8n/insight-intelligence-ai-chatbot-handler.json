@@ -1,0 +1,514 @@
+{
+  "name": "insight-intelligence-ai-chatbot-handler",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-chatbot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "chatbot-webhook",
+      "name": "Chat Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        300
+      ],
+      "webhookId": "auto-generated"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "message",
+              "value": "={{$json.body.message}}"
+            },
+            {
+              "name": "sessionId",
+              "value": "={{$json.body.sessionId}}"
+            },
+            {
+              "name": "userId",
+              "value": "={{$json.body.userId || 'anonymous'}}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{$json.body.timestamp || DateTime.now().toISO()}}"
+            },
+            {
+              "name": "url",
+              "value": "={{$json.body.url || 'unknown'}}"
+            },
+            {
+              "name": "userAgent",
+              "value": "={{$json.body.userAgent || 'unknown'}}"
+            },
+            {
+              "name": "messageCount",
+              "value": "={{$json.body.messageCount || 1}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extract-message-data",
+      "name": "Extract Message Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "lead-intent-keywords",
+              "leftValue": "={{$node['Extract Message Data'].json['message'].toLowerCase()}}",
+              "rightValue": "(demo|schedule|meeting|call|pricing|contact|sales|book|appointment|speak|talk|human|agent|consultation|quote|proposal|interested|buy|purchase|solution)",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-lead-intent",
+      "name": "Check Lead Intent",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        80,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o-mini\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are Layla, a knowledgeable and enthusiastic AI assistant for Insight Intelligence. You specialize in helping small business owners discover how AI automation can transform their operations, increase revenue, and reduce costs.\\n\\nCore Mission: Make enterprise-level AI automation accessible and simple for small businesses.\\n\\nCommunication Style:\\n- Warm, enthusiastic, and solution-oriented\\n- Professional yet approachable (like a knowledgeable friend)\\n- Keep responses conversational and engaging (2-3 sentences)\\n- Always end with a question to continue dialogue\\n- Use industry-specific examples when relevant\\n\\nPrimary Solutions:\\n• AI Phone Automation: 24/7 phone answering, appointment scheduling, lead qualification\\n• AI Website Chat: Instant visitor engagement, lead capture, customer support\\n\\nKey Benefits:\\n• Cost savings: $40,000+ annually by automating staff functions\\n• Revenue growth: 24/7 lead capture, no missed opportunities\\n• Simplicity: Enterprise automation without enterprise complexity\\n\\nTarget Industries: Medical practices, service businesses (HVAC, plumbing), professional services, real estate, retail, home services.\\n\\nApproach: Ask discovery questions about their business type and challenges, then provide relevant examples of how similar businesses benefit from AI automation.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"{{$node['Extract Message Data'].json['message']}}\"\n    }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 200\n}",
+        "options": {}
+      },
+      "id": "generate-standard-response",
+      "name": "Generate Standard Response",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        320,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "openai-api-key",
+          "name": "OpenAI API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o-mini\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are Layla, a friendly AI sales assistant for Insight Intelligence. The user has shown strong interest in our services (mentioned demo, pricing, meeting, etc.).\\n\\nYour goal: Get their contact information so someone can reach out personally.\\n\\nKey Guidelines:\\n- Be enthusiastic about their interest\\n- Explain that you'd love to have someone from our team reach out personally\\n- Ask for: first name, last name, email address, and phone number\\n- Explain the benefits: personalized demo, direct assistance, priority support\\n- Make it feel helpful, not pushy\\n- Keep response warm and conversational (2-3 sentences)\\n\\nResponse format:\\n1. Acknowledge their interest enthusiastically\\n2. Explain you want to connect them with the right person\\n3. Ask for their contact details: \\\"Could you share your first name, last name, email, and phone number?\\\"\\n4. Mention the benefit they'll get\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"{{$node['Extract Message Data'].json['message']}}\"\n    }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 200\n}",
+        "options": {}
+      },
+      "id": "generate-lead-response",
+      "name": "Generate Lead Response",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        320,
+        400
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "openai-api-key",
+          "name": "OpenAI API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "ai_response",
+              "value": "={{$json.choices[0].message.content}}"
+            },
+            {
+              "name": "email",
+              "value": "chatbot-lead@webchat.visitor"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prepare-hubspot-data",
+      "name": "Prepare HubSpot Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        480,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-email",
+              "leftValue": "={{$node['Extract Message Data'].json['message'].toLowerCase()}}",
+              "rightValue": "([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            },
+            {
+              "id": "has-phone",
+              "leftValue": "={{$node['Extract Message Data'].json['message']}}",
+              "rightValue": "(\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}|\\d{10}|\\+\\d{1,4}[-.\\s]?\\(?\\d{1,4}\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9})",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-contact-info",
+      "name": "Check Contact Info",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "contact",
+        "authentication": "oAuth2",
+        "email": "={{ $json.email }}",
+        "additionalFields": {
+          "firstName": "Web",
+          "lastName": "Visitor",
+          "companyName": "Chat Lead"
+        },
+        "options": {}
+      },
+      "id": "create-hubspot-lead",
+      "name": "Create HubSpot Lead",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2,
+      "position": [
+        560,
+        400
+      ],
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "687iXSpXdMKwW2N5",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "voice-call-keywords",
+              "leftValue": "={{$node['Extract Message Data'].json['message'].toLowerCase()}}",
+              "rightValue": "(call me|phone call|voice call|speak|talk to someone|call now|ring me|dial me)",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            },
+            {
+              "id": "demo-keywords",
+              "leftValue": "={{$node['Extract Message Data'].json['message'].toLowerCase()}}",
+              "rightValue": "(call me|phone call|voice call|speak|talk to someone)",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "check-voice-intent",
+      "name": "Check Voice Intent",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        560,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.vapi.ai/call",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phoneNumberId\": \"aa785a4a-455b-4e2a-9497-df42b1d799ef\",\n  \"customer\": {\n    \"number\": \"+15551234567\",\n    \"name\": \"Chat Lead\",\n    \"email\": \"{{$node['Create HubSpot Lead'].json['properties']['email'] || 'chatbot-lead@webchat.visitor'}}\"\n  },\n  \"assistantId\": \"2b22c86f-99d7-4922-84f6-332f95998403\",\n  \"assistantOverrides\": {\n    \"variableValues\": {\n      \"customerName\": \"Chat Lead\",\n      \"companyName\": \"Chat Lead Company\",\n      \"industry\": \"Unknown\",\n      \"inquiryMessage\": \"{{$node['Extract Message Data'].json['message']}}\",\n      \"callReason\": \"Lead qualification follow-up from website chat\",\n      \"urgency\": \"normal\",\n      \"sourcePage\": \"{{$node['Extract Message Data'].json['url']}}\"\n    }\n  },\n  \"name\": \"Chatbot Lead Call - {{$node['Extract Message Data'].json['sessionId']}}\"\n}",
+        "options": {}
+      },
+      "id": "trigger-vapi-call",
+      "name": "Trigger VAPI Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        800,
+        540
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "lixCSfAw9WeDYzuc",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"response\": \"{{$node['Generate Standard Response'].json['choices'][0]['message']['content']}}\",\n  \"sessionId\": \"{{$node['Extract Message Data'].json['sessionId']}}\",\n  \"timestamp\": \"{{DateTime.now().toISO()}}\",\n  \"status\": \"success\",\n  \"isLead\": false,\n  \"messageCount\": \"{{$node['Extract Message Data'].json['messageCount']}}\",\n  \"quickActions\": [\n    {\"text\": \"📅 Schedule Demo\", \"message\": \"I'd like to schedule a demo\"},\n    {\"text\": \"🤖 AI Solutions\", \"message\": \"Tell me about your AI solutions\"},\n    {\"text\": \"💰 Pricing Info\", \"message\": \"I need help with pricing\"},\n    {\"text\": \"📞 Request Call\", \"message\": \"Can someone call me?\"}\n  ]\n}",
+        "options": {}
+      },
+      "id": "send-standard-response",
+      "name": "Send Standard Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"response\": \"{{$node['Generate Lead Response'].json['choices'][0]['message']['content']}}\",\n  \"sessionId\": \"{{$node['Extract Message Data'].json['sessionId']}}\",\n  \"timestamp\": \"{{DateTime.now().toISO()}}\",\n  \"status\": \"success\",\n  \"isLead\": true,\n  \"messageCount\": \"{{$node['Extract Message Data'].json['messageCount']}}\",\n  \"contactInfoRequested\": true,\n  \"quickActions\": [\n    {\"text\": \"✅ Share Contact Info\", \"message\": \"Sure! My name is John Doe, email john@example.com, phone 555-123-4567\"},\n    {\"text\": \"💬 Keep Chatting\", \"message\": \"I'd prefer to just keep chatting for now\"},\n    {\"text\": \"📞 Call Me Instead\", \"message\": \"Can someone just call me?\"},\n    {\"text\": \"🤖 Learn More First\", \"message\": \"Tell me more about your AI solutions first\"}\n  ]\n}",
+        "options": {}
+      },
+      "id": "send-lead-response",
+      "name": "Send Lead Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"response\": \"{{$node['Generate Lead Response'].json['choices'][0]['message']['content']}}\\n\\n📞 **Great news!** I've initiated a call request for you. Someone from our team will call you within the next few minutes. In the meantime, feel free to continue our chat!\",\n  \"sessionId\": \"{{$node['Extract Message Data'].json['sessionId']}}\",\n  \"timestamp\": \"{{DateTime.now().toISO()}}\",\n  \"status\": \"success\",\n  \"isLead\": true,\n  \"messageCount\": \"{{$node['Extract Message Data'].json['messageCount']}}\",\n  \"hubspotContactId\": \"{{$node['Create HubSpot Lead'].json['id']}}\",\n  \"vapiCallTriggered\": true,\n  \"vapiCallId\": \"{{$node['Trigger VAPI Call'].json['vapi_call_id'] || ''}}\",\n  \"quickActions\": [\n    {\"text\": \"📧 Email me info\", \"message\": \"Can you email me information while I wait?\"},\n    {\"text\": \"⏰ When will you call?\", \"message\": \"What time should I expect the call?\"},\n    {\"text\": \"📋 Prepare me\", \"message\": \"What should I prepare for the call?\"},\n    {\"text\": \"💬 Keep chatting\", \"message\": \"Let's continue our conversation while I wait\"}\n  ]\n}",
+        "options": {}
+      },
+      "id": "send-voice-response",
+      "name": "Send Voice Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"response\": \"I'm sorry, I'm having trouble processing your message right now. Our AI system might be temporarily unavailable.\\n\\nYou can:\\n• Try sending your message again\\n• Contact our support team directly\\n• Email us at support@insight-intelligence.com\\n\\nWe apologize for any inconvenience!\",\n  \"sessionId\": \"{{$node['Extract Message Data'].json['sessionId']}}\",\n  \"timestamp\": \"{{DateTime.now().toISO()}}\",\n  \"status\": \"error\",\n  \"error\": \"AI processing failed\",\n  \"isLead\": false,\n  \"quickActions\": [\n    {\"text\": \"🔄 Try again\", \"message\": \"Let me try that again\"},\n    {\"text\": \"📧 Email support\", \"message\": \"I need to contact support directly\"},\n    {\"text\": \"📞 Call me\", \"message\": \"Please have someone call me\"},\n    {\"text\": \"💬 Start over\", \"message\": \"Hi, I'm looking for information about your AI solutions\"}\n  ]\n}",
+        "options": {}
+      },
+      "id": "send-error-response",
+      "name": "Send Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        80
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Chat Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Message Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Message Data": {
+      "main": [
+        [
+          {
+            "node": "Check Lead Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Lead Intent": {
+      "main": [
+        [
+          {
+            "node": "Generate Lead Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate Standard Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Standard Response": {
+      "main": [
+        [
+          {
+            "node": "Send Standard Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Lead Response": {
+      "main": [
+        [
+          {
+            "node": "Prepare HubSpot Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare HubSpot Data": {
+      "main": [
+        [
+          {
+            "node": "Check Contact Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Contact Info": {
+      "main": [
+        [
+          {
+            "node": "Create HubSpot Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Lead Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create HubSpot Lead": {
+      "main": [
+        [
+          {
+            "node": "Check Voice Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Voice Intent": {
+      "main": [
+        [
+          {
+            "node": "Trigger VAPI Call",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Lead Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger VAPI Call": {
+      "main": [
+        [
+          {
+            "node": "Send Voice Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "99aaeba6b75257ee350bb8eb8800a228cb7b97e21f9b2e1e88ec25277f30b9a0"
+  },
+  "tags": []
+}
