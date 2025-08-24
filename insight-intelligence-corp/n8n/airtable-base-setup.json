@@ -1,0 +1,188 @@
+{
+  "baseName": "Chat Leads - Insight Intelligence",
+  "description": "Storage for incomplete chat leads (name + phone only) before full qualification",
+  "tables": [
+    {
+      "name": "Incomplete Leads",
+      "description": "Chat leads without email addresses requiring follow-up",
+      "fields": [
+        {
+          "name": "recordId",
+          "type": "formula",
+          "formula": "RECORD_ID()",
+          "description": "Auto-generated unique identifier"
+        },
+        {
+          "name": "firstName",
+          "type": "singleLineText",
+          "required": true,
+          "description": "First name extracted from chat message"
+        },
+        {
+          "name": "lastName", 
+          "type": "singleLineText",
+          "required": true,
+          "description": "Last name extracted from chat message"
+        },
+        {
+          "name": "phone",
+          "type": "phoneNumber",
+          "required": true,
+          "description": "Phone number in E.164 format"
+        },
+        {
+          "name": "email",
+          "type": "email",
+          "required": false,
+          "description": "Email if collected during follow-up"
+        },
+        {
+          "name": "message",
+          "type": "longText",
+          "required": true,
+          "description": "Original chat message from user"
+        },
+        {
+          "name": "sessionId",
+          "type": "singleLineText", 
+          "required": true,
+          "description": "Chat session identifier"
+        },
+        {
+          "name": "timestamp",
+          "type": "dateTime",
+          "required": true,
+          "description": "Lead creation timestamp"
+        },
+        {
+          "name": "leadSource",
+          "type": "singleSelect",
+          "options": ["chat", "phone", "form", "referral"],
+          "defaultValue": "chat",
+          "description": "Source of the lead"
+        },
+        {
+          "name": "intentClassification",
+          "type": "longText",
+          "description": "AI intent classification JSON data"
+        },
+        {
+          "name": "primaryIntent",
+          "type": "singleSelect",
+          "options": [
+            "demo_request",
+            "pricing_inquiry", 
+            "lead_qualification",
+            "information_gathering",
+            "technical_support",
+            "objection_handling",
+            "scheduling",
+            "general_conversation"
+          ],
+          "description": "Primary intent from AI classification"
+        },
+        {
+          "name": "leadQuality",
+          "type": "singleSelect",
+          "options": ["hot", "warm", "cold", "nurture"],
+          "description": "Lead quality from AI classification"
+        },
+        {
+          "name": "urgencyLevel",
+          "type": "singleSelect",
+          "options": ["immediate", "soon", "flexible", "exploring"],
+          "description": "Urgency level from AI classification"
+        },
+        {
+          "name": "vapiCallStatus",
+          "type": "singleSelect",
+          "options": ["pending", "completed", "failed", "no_answer", "scheduled"],
+          "defaultValue": "pending",
+          "description": "Status of VAPI follow-up call"
+        },
+        {
+          "name": "vapiCallId",
+          "type": "singleLineText",
+          "description": "VAPI call identifier"
+        },
+        {
+          "name": "status",
+          "type": "singleSelect",
+          "options": ["new", "contacted", "qualified", "converted", "unresponsive"],
+          "defaultValue": "new",
+          "description": "Lead progression status"
+        },
+        {
+          "name": "hubspotMigrated",
+          "type": "checkbox",
+          "defaultValue": false,
+          "description": "Whether lead has been transferred to HubSpot"
+        },
+        {
+          "name": "hubspotContactId",
+          "type": "singleLineText",
+          "description": "HubSpot contact ID after migration"
+        },
+        {
+          "name": "notes",
+          "type": "longText",
+          "description": "Follow-up notes and call summary"
+        },
+        {
+          "name": "lastContactDate",
+          "type": "dateTime",
+          "description": "Last contact attempt timestamp"
+        },
+        {
+          "name": "nextFollowUpDate",
+          "type": "dateTime", 
+          "description": "Scheduled next follow-up date"
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "name": "New Leads",
+      "table": "Incomplete Leads",
+      "filter": "status = 'new'",
+      "sort": [{"field": "timestamp", "direction": "desc"}],
+      "description": "Recently created leads requiring initial contact"
+    },
+    {
+      "name": "Pending VAPI Calls",
+      "table": "Incomplete Leads", 
+      "filter": "vapiCallStatus = 'pending'",
+      "sort": [{"field": "timestamp", "direction": "asc"}],
+      "description": "Leads awaiting VAPI call initiation"
+    },
+    {
+      "name": "Hot Prospects",
+      "table": "Incomplete Leads",
+      "filter": "AND(leadQuality = 'hot', status != 'converted')",
+      "sort": [{"field": "urgencyLevel", "direction": "asc"}],
+      "description": "High-priority leads requiring immediate attention"
+    },
+    {
+      "name": "Ready for HubSpot",
+      "table": "Incomplete Leads",
+      "filter": "AND(email != BLANK(), hubspotMigrated = FALSE(), status = 'qualified')",
+      "sort": [{"field": "timestamp", "direction": "desc"}],
+      "description": "Qualified leads with email ready for CRM migration"
+    },
+    {
+      "name": "Converted Leads",
+      "table": "Incomplete Leads",
+      "filter": "hubspotMigrated = TRUE()",
+      "sort": [{"field": "lastContactDate", "direction": "desc"}],
+      "description": "Successfully migrated leads for historical tracking"
+    },
+    {
+      "name": "Follow-up Required",
+      "table": "Incomplete Leads",
+      "filter": "AND(status = 'contacted', vapiCallStatus = 'no_answer')",
+      "sort": [{"field": "nextFollowUpDate", "direction": "asc"}],
+      "description": "Leads requiring additional contact attempts"
+    }
+  ]
+}
