@@ -1,0 +1,777 @@
+{
+  "name": "ai-chatbot-v2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-chatbot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "539336d5-4013-4f94-8cf2-af0245eab800",
+      "name": "Chat Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1440,
+        256
+      ],
+      "webhookId": "auto-generated"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "message",
+              "value": "={{$json.body.message}}"
+            },
+            {
+              "name": "sessionId",
+              "value": "={{$json.body.sessionId}}"
+            },
+            {
+              "name": "userId",
+              "value": "={{$json.body.userId || 'anonymous'}}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{$json.body.timestamp || DateTime.now().toISO()}}"
+            },
+            {
+              "name": "url",
+              "value": "={{$json.body.url || 'unknown'}}"
+            },
+            {
+              "name": "userAgent",
+              "value": "={{$json.body.userAgent || 'unknown'}}"
+            },
+            {
+              "name": "messageCount",
+              "value": "={{$json.body.messageCount || 1}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "07d7ef61-d1fd-460f-91e5-2c87a0861cab",
+      "name": "Extract Message Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -1200,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.jsonbin.io/v3/b/68aa5ec143b1c97be926f1d0",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "da29ab1b-b857-4a38-b4cf-6befcec819de",
+      "name": "Get JSONBin Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -960,
+        256
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "zbXUZibXzpKhXdTc",
+          "name": "jsonbin auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Handle empty or malformed JSONBin data\nconst rawData = $json;\nconst sessionId = $node['Extract Message Data'].json['sessionId'] || 'unknown';\nconst message = $node['Extract Message Data'].json['message'] || '';\n\n// Initialize default structure if bin is empty or malformed\nlet binData = {\n  conversations: {},\n  stats: {\n    totalSessions: 0,\n    lastUpdated: new Date().toISOString()\n  }\n};\n\n// Try to get the actual data from JSONBin response\nif (rawData && rawData.record) {\n  // JSONBin wraps data in 'record' property\n  binData = rawData.record;\n} else if (rawData && rawData.conversations) {\n  // Direct data structure\n  binData = rawData;\n}\n\n// Ensure conversations object exists\nif (!binData.conversations) {\n  binData.conversations = {};\n}\n\n// Ensure stats object exists\nif (!binData.stats) {\n  binData.stats = {\n    totalSessions: 0,\n    lastUpdated: new Date().toISOString()\n  };\n}\n\n// Build session key\nconst sessionKey = 'session_' + sessionId;\n\n// Get conversation history (empty array if not exists)\nconst conversationHistory = binData.conversations[sessionKey]?.messages || [];\n\n// Get existing conversation data\nconst existingConversation = binData.conversations[sessionKey] || null;\n\nreturn {\n  json: {\n    conversationHistory: conversationHistory,\n    currentMessage: message,\n    sessionKey: sessionKey,\n    fullBinData: JSON.stringify(binData),\n    existingConversation: existingConversation,\n    binDataObject: binData\n  }\n};"
+      },
+      "id": "63256078-aaff-4ff0-9592-dce15fa8dafe",
+      "name": "Extract Conversation Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "lead-intent-keywords",
+              "leftValue": "={{$node['Extract Message Data'].json['message'].toLowerCase()}}",
+              "rightValue": "(demo|schedule|meeting|call|pricing|contact|sales|book|appointment|speak|talk|human|agent|consultation|quote|proposal|interested|buy|purchase|solution)",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d14713ed-58cb-4f17-add1-43e28d96d9ba",
+      "name": "Check Lead Intent",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'You are Layla, a knowledgeable AI business consultant for Insight Intelligence. Your mission is to help service-based business owners recover the $50K-$200K they are losing annually from missed calls, poor follow-up, and operational inefficiencies. Core Positioning: 24/7 Revenue Recovery System for Service Businesses. Your Solutions: AI Phone System: Answers every call, schedules appointments, handles billing inquiries, makes outbound calls - completely automated front desk. AI Website Chat: Instant response, lead qualification, appointment booking directly from website. Complete Integration: Works with any CRM, calendar, email system through n8n automation. Proven Results: Revenue Recovery: $50K-$200K annually from captured missed opportunities. Time Savings: 20-30 hours per week freed from administrative tasks. ROI: 240% return within 6 months, 95% call answer rate. Consultative Approach: 1. Ask discovery questions about their specific pain points 2. Help them calculate what inefficiencies are costing them 3. Provide industry-specific examples 4. Build implementation confidence before suggesting a demo. Communication Style: Professional business consultant who asks thoughtful questions, provides specific ROI examples, and helps prospects understand the cost of inaction. Always relate solutions to their specific business challenges.' }].concat($node['Extract Conversation Data'].json['conversationHistory'] || []).concat([{ role: 'user', content: $node['Extract Message Data'].json['message'] }]), temperature: 0.7, max_tokens: 250 } }}",
+        "options": {}
+      },
+      "id": "261a5355-bd67-440a-82ac-f6ab5ef3f78e",
+      "name": "Generate Standard Response",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -240,
+        144
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "z3EpNCqUns8T3dP1",
+          "name": "openapiHeaderAuth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'You are Layla, a knowledgeable AI business consultant for Insight Intelligence. The user has shown strong interest in our revenue recovery solutions (mentioned demo, pricing, meeting, etc.). Context: They are likely a service business owner losing $50K-$200K annually from missed calls and inefficiencies. They are interested in our automated front desk/phone/chat system. Your approach: 1. Acknowledge their interest and the value they will get from a personalized demo 2. Briefly reinforce the ROI opportunity (recovering lost revenue, saving 20-30 hours/week) 3. Explain that a specialist can show them exactly how the system would work with their specific business and existing tools 4. Ask for contact information to set up a customized demonstration. Key points to mention: Personalized demo showing integration with their CRM/calendar systems, ROI calculation specific to their business size and call volume, Implementation timeline and support process, Live demonstration of how their calls/chats would be handled. Tone: Professional consultant excited to help them recover significant lost revenue. Focus on business outcomes, not just features.' }].concat($node['Extract Conversation Data'].json['conversationHistory'] || []).concat([{ role: 'user', content: $node['Extract Message Data'].json['message'] }]), temperature: 0.7, max_tokens: 250 } }}",
+        "options": {}
+      },
+      "id": "58c08eee-2bcf-4fd9-ab56-1218bc798995",
+      "name": "Generate Lead Response",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -240,
+        352
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "z3EpNCqUns8T3dP1",
+          "name": "openapiHeaderAuth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "ai_response",
+              "value": "={{$json.choices[0].message.content}}"
+            },
+            {
+              "name": "updatedMessages",
+              "value": "={{(($node['Extract Conversation Data'].json['conversationHistory'] || [])).concat([{\"role\": \"user\", \"content\": $node['Extract Message Data'].json['message'], \"timestamp\": $node['Extract Message Data'].json['timestamp']}, {\"role\": \"assistant\", \"content\": $json.choices[0].message.content, \"timestamp\": DateTime.now().toISO()}])}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9e41dd80-3bd9-492d-952e-a2fefdea9574",
+      "name": "Prepare Standard Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        240,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "ai_response",
+              "value": "={{$json.choices[0].message.content}}"
+            },
+            {
+              "name": "updatedMessages",
+              "value": "={{(($node['Extract Conversation Data'].json['conversationHistory'] || [])).concat([{\"role\": \"user\", \"content\": $node['Extract Message Data'].json['message'], \"timestamp\": $node['Extract Message Data'].json['timestamp']}, {\"role\": \"assistant\", \"content\": $json.choices[0].message.content, \"timestamp\": DateTime.now().toISO()}])}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "83808ee2-507a-4fb9-9553-00df5b47e493",
+      "name": "Prepare Lead Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        240,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const binData = JSON.parse($node['Extract Conversation Data'].json['fullBinData'] || '{}');\nconst sessionKey = $node['Extract Conversation Data'].json['sessionKey'];\nconst sessionId = $node['Extract Message Data'].json['sessionId'];\nconst userId = $node['Extract Message Data'].json['userId'];\nconst updatedMessages = $node['Prepare Standard Response'].json['updatedMessages'];\n\n// Update or create conversation\nbinData.conversations[sessionKey] = {\n  sessionId: sessionId,\n  userId: userId,\n  createdAt: binData.conversations[sessionKey]?.createdAt || DateTime.now().toISO(),\n  lastActivity: DateTime.now().toISO(),\n  messages: updatedMessages,\n  metadata: {\n    leadStatus: \"engaged\",\n    businessType: binData.conversations[sessionKey]?.metadata?.businessType || \"unknown\",\n    contactProvided: binData.conversations[sessionKey]?.metadata?.contactProvided || false,\n    demoRequested: binData.conversations[sessionKey]?.metadata?.demoRequested || false\n  }\n};\n\n// Update stats\nbinData.stats.totalSessions = Object.keys(binData.conversations).length;\nbinData.stats.lastUpdated = DateTime.now().toISO();\n\nreturn { json: { updatedBinData: binData } };"
+      },
+      "id": "f9f0ffb1-5acd-487a-a521-d3f6b143fb5d",
+      "name": "Build Updated Bin (Standard)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const binData = JSON.parse($node['Extract Conversation Data'].json['fullBinData'] || '{}');\nconst sessionKey = $node['Extract Conversation Data'].json['sessionKey'];\nconst sessionId = $node['Extract Message Data'].json['sessionId'];\nconst userId = $node['Extract Message Data'].json['userId'];\nconst updatedMessages = $node['Prepare Lead Response'].json['updatedMessages'];\n\n// Update or create conversation\nbinData.conversations[sessionKey] = {\n  sessionId: sessionId,\n  userId: userId,\n  createdAt: binData.conversations[sessionKey]?.createdAt || DateTime.now().toISO(),\n  lastActivity: DateTime.now().toISO(),\n  messages: updatedMessages,\n  metadata: {\n    leadStatus: \"qualified\",\n    businessType: binData.conversations[sessionKey]?.metadata?.businessType || \"unknown\",\n    contactProvided: binData.conversations[sessionKey]?.metadata?.contactProvided || false,\n    demoRequested: true\n  }\n};\n\n// Update stats\nbinData.stats.totalSessions = Object.keys(binData.conversations).length;\nbinData.stats.lastUpdated = DateTime.now().toISO();\n\nreturn { json: { updatedBinData: binData } };"
+      },
+      "id": "344465b6-4505-412f-b9c7-17ca56b3765b",
+      "name": "Build Updated Bin (Lead)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "https://api.jsonbin.io/v3/b/68aa5ec143b1c97be926f1d0",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json.updatedBinData}}",
+        "options": {}
+      },
+      "id": "741d4447-bc14-4813-9e84-bd8ce3d25612",
+      "name": "Update JSONBin (Standard)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        480,
+        144
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "zbXUZibXzpKhXdTc",
+          "name": "jsonbin auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "https://api.jsonbin.io/v3/b/68aa5ec143b1c97be926f1d0",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json.updatedBinData}}",
+        "options": {}
+      },
+      "id": "81227f9a-7a6f-48a9-95a5-47e8b73516e0",
+      "name": "Update JSONBin (Lead)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        480,
+        352
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "zbXUZibXzpKhXdTc",
+          "name": "jsonbin auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-email",
+              "leftValue": "={{$node['Extract Message Data'].json['message'].toLowerCase()}}",
+              "rightValue": "([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            },
+            {
+              "id": "has-phone",
+              "leftValue": "={{$node['Extract Message Data'].json['message']}}",
+              "rightValue": "(\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}|\\d{10}|\\+\\d{1,4}[-.\\s]?\\(?\\d{1,4}\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9})",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3137642a-f8cb-4447-92cb-4fd8f3feb7c0",
+      "name": "Check Contact Info",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        720,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "email": "={{ $json.email }}",
+        "additionalFields": {
+          "companyName": "Chat Lead",
+          "firstName": "Web",
+          "lastName": "Visitor"
+        },
+        "options": {}
+      },
+      "id": "5e3f402c-7c1e-4284-91de-fdd589b95a98",
+      "name": "Create HubSpot Lead",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2,
+      "position": [
+        960,
+        352
+      ],
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "687iXSpXdMKwW2N5",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "voice-call-keywords",
+              "leftValue": "={{$node['Extract Message Data'].json['message'].toLowerCase()}}",
+              "rightValue": "(call me|phone call|voice call|speak|talk to someone|call now|ring me|dial me)",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "0efaa557-c819-4d82-ad66-d4f4f1673e7c",
+      "name": "Check Voice Intent",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.vapi.ai/call",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phoneNumberId\": \"aa785a4a-455b-4e2a-9497-df42b1d799ef\",\n  \"customer\": {\n    \"number\": \"+15551234567\",\n    \"name\": \"Chat Lead\",\n    \"email\": \"{{$node['Create HubSpot Lead'].json['properties']['email'] || 'chatbot-lead@webchat.visitor'}}\"\n  },\n  \"assistantId\": \"2b22c86f-99d7-4922-84f6-332f95998403\",\n  \"assistantOverrides\": {\n    \"variableValues\": {\n      \"customerName\": \"Chat Lead\",\n      \"companyName\": \"Chat Lead Company\",\n      \"industry\": \"Unknown\",\n      \"inquiryMessage\": \"{{$node['Extract Message Data'].json['message']}}\",\n      \"callReason\": \"Lead qualification follow-up from website chat\",\n      \"urgency\": \"normal\",\n      \"sourcePage\": \"{{$node['Extract Message Data'].json['url']}}\"\n    }\n  },\n  \"name\": \"Chatbot Lead Call - {{$node['Extract Message Data'].json['sessionId']}}\"\n}",
+        "options": {}
+      },
+      "id": "41c6bc77-d70f-43ae-a0df-dd022ae8c28a",
+      "name": "Trigger VAPI Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1440,
+        496
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "lixCSfAw9WeDYzuc",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Function to safely get value with fallback\nfunction safeGet(obj, path, defaultValue) {\n  try {\n    const keys = path.split('.');\n    let result = obj;\n    for (const key of keys) {\n      result = result?.[key];\n      if (result === undefined || result === null) {\n        return defaultValue;\n      }\n    }\n    return result;\n  } catch (e) {\n    return defaultValue;\n  }\n}\n\n// Safely extract all values\nconst prepareNode = $node['Prepare Standard Response'];\nconst extractNode = $node['Extract Message Data'];\n\nconst aiResponse = safeGet(prepareNode, 'json.ai_response', 'Sorry, I encountered an issue generating a response.');\nconst sessionId = safeGet(extractNode, 'json.sessionId', 'unknown');\nconst messageCount = parseInt(safeGet(extractNode, 'json.messageCount', '1')) || 1;\n\n// Build response object with guaranteed string/number types\nconst responseData = {\n  response: String(aiResponse).trim() || 'Response unavailable',\n  sessionId: String(sessionId).trim() || 'unknown',\n  timestamp: new Date().toISOString(),\n  status: 'success',\n  isLead: false,\n  messageCount: messageCount,\n  conversationContext: 'maintained_jsonbin',\n  quickActions: [\n    {\n      text: '📅 Schedule Demo',\n      message: 'I\\'d like to schedule a demo'\n    },\n    {\n      text: '🤖 AI Solutions',\n      message: 'Tell me about your AI solutions'\n    },\n    {\n      text: '💰 Pricing Info',\n      message: 'I need help with pricing'\n    },\n    {\n      text: '📞 Request Call',\n      message: 'Can someone call me?'\n    }\n  ]\n};\n\n// Double-check all values are valid\nif (!responseData.response || responseData.response === 'undefined') {\n  responseData.response = 'Sorry, I encountered an issue generating a response.';\n}\nif (!responseData.sessionId || responseData.sessionId === 'undefined') {\n  responseData.sessionId = 'unknown';\n}\n\n// Return clean JSON object\nreturn { json: responseData };"
+      },
+      "id": "c23a018d-e14f-4b3a-8273-812ecaf7406c",
+      "name": "Build Standard Response JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "cfc56dbd-d5c6-4e19-a06b-e60407fa2a9c",
+      "name": "Send Standard Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Function to safely get value with fallback\nfunction safeGet(obj, path, defaultValue) {\n  try {\n    const keys = path.split('.');\n    let result = obj;\n    for (const key of keys) {\n      result = result?.[key];\n      if (result === undefined || result === null) {\n        return defaultValue;\n      }\n    }\n    return result;\n  } catch (e) {\n    return defaultValue;\n  }\n}\n\n// Safely extract all values\nconst prepareNode = $node['Prepare Lead Response'];\nconst extractNode = $node['Extract Message Data'];\n\nconst aiResponse = safeGet(prepareNode, 'json.ai_response', 'Sorry, I encountered an issue generating a response.');\nconst sessionId = safeGet(extractNode, 'json.sessionId', 'unknown');\nconst messageCount = parseInt(safeGet(extractNode, 'json.messageCount', '1')) || 1;\n\n// Build response object with guaranteed string/number types\nconst responseData = {\n  response: String(aiResponse).trim() || 'Response unavailable',\n  sessionId: String(sessionId).trim() || 'unknown',\n  timestamp: new Date().toISOString(),\n  status: 'success',\n  isLead: true,\n  messageCount: messageCount,\n  conversationContext: 'maintained_jsonbin',\n  contactInfoRequested: true,\n  quickActions: [\n    {\n      text: '✅ Share Contact Info',\n      message: 'Sure! My name is John Doe, email john@example.com, phone 555-123-4567'\n    },\n    {\n      text: '💬 Keep Chatting',\n      message: 'I\\'d prefer to just keep chatting for now'\n    },\n    {\n      text: '📞 Call Me Instead',\n      message: 'Can someone just call me?'\n    },\n    {\n      text: '🤖 Learn More First',\n      message: 'Tell me more about your AI solutions first'\n    }\n  ]\n};\n\n// Double-check all values are valid\nif (!responseData.response || responseData.response === 'undefined') {\n  responseData.response = 'Sorry, I encountered an issue generating a response.';\n}\nif (!responseData.sessionId || responseData.sessionId === 'undefined') {\n  responseData.sessionId = 'unknown';\n}\n\n// Return clean JSON object\nreturn { json: responseData };"
+      },
+      "id": "64fa301d-8b40-4389-91ff-903b8c6b5e7d",
+      "name": "Build Lead Response JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "2a5e6615-bd56-4785-aaa6-47d28d0e9ee8",
+      "name": "Send Lead Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Function to safely get value with fallback\nfunction safeGet(obj, path, defaultValue) {\n  try {\n    const keys = path.split('.');\n    let result = obj;\n    for (const key of keys) {\n      result = result?.[key];\n      if (result === undefined || result === null) {\n        return defaultValue;\n      }\n    }\n    return result;\n  } catch (e) {\n    return defaultValue;\n  }\n}\n\n// Safely extract all values\nconst prepareNode = $node['Prepare Lead Response'];\nconst extractNode = $node['Extract Message Data'];\nconst hubspotNode = $node['Create HubSpot Lead'];\nconst vapiNode = $node['Trigger VAPI Call'];\n\nconst aiResponse = safeGet(prepareNode, 'json.ai_response', 'Response unavailable');\nconst sessionId = safeGet(extractNode, 'json.sessionId', 'unknown');\nconst messageCount = parseInt(safeGet(extractNode, 'json.messageCount', '1')) || 1;\nconst hubspotId = safeGet(hubspotNode, 'json.id', '');\nconst vapiId = safeGet(vapiNode, 'json.id', '');\n\n// Build response with voice call confirmation\nconst fullResponse = String(aiResponse).trim() + '\\n\\n📞 **Great news!** I\\'ve initiated a call request for you. Someone from our team will call you within the next few minutes. In the meantime, feel free to continue our chat!';\n\n// Build response object with guaranteed string/number types\nconst responseData = {\n  response: fullResponse,\n  sessionId: String(sessionId).trim() || 'unknown',\n  timestamp: new Date().toISOString(),\n  status: 'success',\n  isLead: true,\n  messageCount: messageCount,\n  conversationContext: 'maintained_jsonbin',\n  hubspotContactId: String(hubspotId).trim() || '',\n  vapiCallTriggered: true,\n  vapiCallId: String(vapiId).trim() || '',\n  quickActions: [\n    {\n      text: '📧 Email me info',\n      message: 'Can you email me information while I wait?'\n    },\n    {\n      text: '⏰ When will you call?',\n      message: 'What time should I expect the call?'\n    },\n    {\n      text: '📋 Prepare me',\n      message: 'What should I prepare for the call?'\n    },\n    {\n      text: '💬 Keep chatting',\n      message: 'Let\\'s continue our conversation while I wait'\n    }\n  ]\n};\n\n// Double-check critical values\nif (!responseData.sessionId || responseData.sessionId === 'undefined') {\n  responseData.sessionId = 'unknown';\n}\n\n// Return clean JSON object\nreturn { json: responseData };"
+      },
+      "id": "ec568ab2-267e-4e37-9095-fbb1f6694851",
+      "name": "Build Voice Response JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "58fd472b-9cf3-405c-9bf6-b8008eeee46c",
+      "name": "Send Voice Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        496
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Chat Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Message Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Message Data": {
+      "main": [
+        [
+          {
+            "node": "Get JSONBin Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get JSONBin Data": {
+      "main": [
+        [
+          {
+            "node": "Extract Conversation Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Conversation Data": {
+      "main": [
+        [
+          {
+            "node": "Check Lead Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Lead Intent": {
+      "main": [
+        [
+          {
+            "node": "Generate Lead Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate Standard Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Standard Response": {
+      "main": [
+        [
+          {
+            "node": "Prepare Standard Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Lead Response": {
+      "main": [
+        [
+          {
+            "node": "Prepare Lead Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Standard Response": {
+      "main": [
+        [
+          {
+            "node": "Build Updated Bin (Standard)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Lead Response": {
+      "main": [
+        [
+          {
+            "node": "Build Updated Bin (Lead)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Updated Bin (Standard)": {
+      "main": [
+        [
+          {
+            "node": "Update JSONBin (Standard)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Updated Bin (Lead)": {
+      "main": [
+        [
+          {
+            "node": "Update JSONBin (Lead)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update JSONBin (Standard)": {
+      "main": [
+        [
+          {
+            "node": "Build Standard Response JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Standard Response JSON": {
+      "main": [
+        [
+          {
+            "node": "Send Standard Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update JSONBin (Lead)": {
+      "main": [
+        [
+          {
+            "node": "Check Contact Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Contact Info": {
+      "main": [
+        [
+          {
+            "node": "Create HubSpot Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Lead Response JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Lead Response JSON": {
+      "main": [
+        [
+          {
+            "node": "Send Lead Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create HubSpot Lead": {
+      "main": [
+        [
+          {
+            "node": "Check Voice Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Voice Intent": {
+      "main": [
+        [
+          {
+            "node": "Trigger VAPI Call",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Lead Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger VAPI Call": {
+      "main": [
+        [
+          {
+            "node": "Build Voice Response JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Voice Response JSON": {
+      "main": [
+        [
+          {
+            "node": "Send Voice Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b40e5083-05ba-428c-9dc1-90d608771d99",
+  "meta": {
+    "instanceId": "99aaeba6b75257ee350bb8eb8800a228cb7b97e21f9b2e1e88ec25277f30b9a0"
+  },
+  "id": "rwOjlTL3dOdXh1QR",
+  "tags": []
+}
