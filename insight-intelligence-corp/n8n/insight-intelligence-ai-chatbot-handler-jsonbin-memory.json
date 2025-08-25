@@ -412,7 +412,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Extract contact details from user message\nconst message = $node['Extract Message Data'].json.message || '';\nconst sessionId = $node['Extract Message Data'].json.sessionId || 'unknown';\n\n// Extract name\nconst nameMatch = message.match(/(?:my name is|i'm|i am|call me|contact|name:)\\s+([a-zA-Z]{2,}(?:\\s+[a-zA-Z]{2,})?)/i);\nlet firstName = 'Chat';\nlet lastName = 'Lead';\n\nif (nameMatch) {\n  const fullName = nameMatch[1].trim();\n  const nameParts = fullName.split(/\\s+/);\n  firstName = nameParts[0];\n  lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'Lead';\n}\n\n// Extract phone\nconst phoneMatch = message.match(/(\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}|\\d{10}|\\+\\d{1,4}[-.\\s]?\\(?\\d{1,4}\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9})/);\nconst phone = phoneMatch ? phoneMatch[0].replace(/[()\\s-]/g, '') : '';\n\n// Extract email (no dummy generation - handled by routing)\nconst emailMatch = message.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})/);\nconst email = emailMatch ? emailMatch[0].toLowerCase() : '';\n\n// Return contact details\nreturn [{\n  firstName: firstName,\n  lastName: lastName,\n  phone: phone,\n  email: email,\n  hasEmail: !!email,\n  hasName: !!nameMatch,\n  hasPhone: !!phoneMatch\n}];"
+        "jsCode": "// Extract contact details from user message\nconst message = $node['Extract Message Data'].json.message || '';\nconst sessionId = $node['Extract Message Data'].json.sessionId || 'unknown';\n\n// Extract name - try multiple patterns\nlet nameMatch = message.match(/(?:my name is|i'm|i am|call me|contact|name:|first name|last name)\\s+([a-zA-Z]{2,}(?:\\s+[a-zA-Z]{2,})?)/i);\n\n// If no formal introduction, try to find name at beginning of message\nif (!nameMatch) {\n  nameMatch = message.match(/^([a-zA-Z]{2,}\\s+[a-zA-Z]{2,})/);\n}\n\nlet firstName = 'Chat';\nlet lastName = 'Lead';\n\nif (nameMatch) {\n  const fullName = nameMatch[1].trim();\n  const nameParts = fullName.split(/\\s+/);\n  firstName = nameParts[0];\n  lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'Lead';\n}\n\n// Extract phone\nconst phoneMatch = message.match(/(\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}|\\d{10}|\\+\\d{1,4}[-.\\s]?\\(?\\d{1,4}\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9})/);\nconst phone = phoneMatch ? phoneMatch[0].replace(/[()\\s-]/g, '') : '';\n\n// Extract email (no dummy generation - handled by routing)\nconst emailMatch = message.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})/);\nconst email = emailMatch ? emailMatch[0].toLowerCase() : '';\n\n// Return contact details\nreturn [{\n  firstName: firstName,\n  lastName: lastName,\n  phone: phone,\n  email: email,\n  hasEmail: !!email,\n  hasName: !!nameMatch,\n  hasPhone: !!phoneMatch\n}];"
       },
       "id": "a2fb4875-a579-4e62-a008-df0bb2492bff",
       "name": "Extract Contact Details",
@@ -520,46 +520,13 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 1
-          },
-          "conditions": [
-            {
-              "id": "voice-call-keywords",
-              "leftValue": "={{$node['Extract Message Data'].json['message'].toLowerCase()}}",
-              "rightValue": "(call me|phone call|voice call|speak|talk to someone|call now|ring me|dial me)",
-              "operator": {
-                "type": "string",
-                "operation": "regex"
-              }
-            }
-          ],
-          "combinator": "or"
-        },
-        "options": {}
-      },
-      "id": "70e44143-1417-492a-899d-b11d73253186",
-      "name": "Check Voice Intent",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [
-        304,
-        96
-      ]
-    },
-    {
-      "parameters": {
         "method": "POST",
         "url": "https://api.vapi.ai/call",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"phoneNumberId\": \"aa785a4a-455b-4e2a-9497-df42b1d799ef\",\n  \"customer\": {\n    \"number\": \"{{$node['Create HubSpot Lead'].json['properties']['phone'] || '+15551234567'}}\",\n    \"name\": \"{{($node['Create HubSpot Lead'].json['properties']['firstname'] || 'Chat') + ' ' + ($node['Create HubSpot Lead'].json['properties']['lastname'] || 'Lead')}}\",\n    \"email\": \"{{$node['Create HubSpot Lead'].json['properties']['email'] || 'chatbot-lead@webchat.visitor'}}\"\n  },\n  \"assistantId\": \"2b22c86f-99d7-4922-84f6-332f95998403\",\n  \"assistantOverrides\": {\n    \"variableValues\": {\n      \"customerName\": \"{{($node['Create HubSpot Lead'].json['properties']['firstname'] || 'Chat') + ' ' + ($node['Create HubSpot Lead'].json['properties']['lastname'] || 'Lead')}}\",\n      \"companyName\": \"Chat Lead Company\",\n      \"industry\": \"Unknown\",\n      \"inquiryMessage\": \"{{$node['Extract Message Data'].json['message']}}\",\n      \"callReason\": \"Lead qualification follow-up from website chat\",\n      \"urgency\": \"{{$node['Process Intent Classification'].json[0]['urgency_level'] || 'normal'}}\",\n      \"sourcePage\": \"{{$node['Extract Message Data'].json['url']}}\"\n    }\n  },\n  \"name\": \"Chatbot Lead Call - {{$node['Extract Message Data'].json['sessionId']}}\"\n}",
+        "jsonBody": "={{ {\n  phoneNumberId: 'aa785a4a-455b-4e2a-9497-df42b1d799ef',\n  customer: {\n    number: ($node['Extract Contact Details'].json.phone && $node['Extract Contact Details'].json.phone.startsWith('+')) \n      ? $node['Extract Contact Details'].json.phone.trim() \n      : '+1' + ($node['Extract Contact Details'].json.phone || '5551234567').replace(/[^0-9]/g, ''),\n    name: String((($node['Extract Contact Details'].json.firstName || 'Chat') + ' ' + ($node['Extract Contact Details'].json.lastName || 'Lead')).trim()).substring(0, 35),\n    email: $node['Extract Contact Details'].json.email || 'chatbot-lead@webchat.visitor'\n  },\n  assistantId: '2b22c86f-99d7-4922-84f6-332f95998403',\n  assistantOverrides: {\n    variableValues: {\n      customerName: String((($node['Extract Contact Details'].json.firstName || 'Chat') + ' ' + ($node['Extract Contact Details'].json.lastName || 'Lead')).trim()).substring(0, 35),\n      companyName: 'Chat Lead Company',\n      industry: 'Unknown',\n      inquiryMessage: $node['Extract Message Data'].json.message || '',\n      callReason: 'Lead qualification follow-up from website chat',\n      urgency: $node['Process Intent Classification'].json.urgency_level || 'normal',\n      sourcePage: $node['Extract Message Data'].json.url || ''\n    }\n  },\n  name: ('Chatbot Lead Call - ' + ($node['Extract Message Data'].json.sessionId || 'unknown')).substring(0, 40)\n} }}",
         "options": {}
       },
       "id": "b4ea17a8-96b2-4b85-ba7d-bbc1e97abfc4",
@@ -917,7 +884,7 @@
       "main": [
         [
           {
-            "node": "Check Voice Intent",
+            "node": "Trigger VAPI Call",
             "type": "main",
             "index": 0
           }
@@ -939,25 +906,7 @@
       "main": [
         [
           {
-            "node": "Check Voice Intent",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Voice Intent": {
-      "main": [
-        [
-          {
             "node": "Trigger VAPI Call",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Build Lead Response JSON",
             "type": "main",
             "index": 0
           }
