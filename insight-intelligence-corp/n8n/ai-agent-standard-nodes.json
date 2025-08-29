@@ -1,0 +1,392 @@
+{
+  "name": "ai-chatbot-v2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-chatbot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "56241226-4178-43bd-91e6-c2ce22434e28",
+      "name": "Chat Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        656,
+        288
+      ],
+      "webhookId": "auto-generated"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "message",
+              "value": "={{$json.body.message}}"
+            },
+            {
+              "name": "sessionId",
+              "value": "={{$json.body.sessionId || 'session-' + Date.now()}}"
+            },
+            {
+              "name": "userId",
+              "value": "={{$json.body.userId || 'anonymous'}}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{DateTime.now().toISO()}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "170e0829-e4ba-48d7-a458-0a9beae5549a",
+      "name": "Extract Message Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        864,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://api.airtable.com/v0/appv2GNhMPW2m9uBJ/Conversation%20Messages?filterByFormula=sessionId%3D%27' + encodeURIComponent($node['Extract Message Data'].json.sessionId || 'unknown') + '%27&sort%5B0%5D%5Bfield%5D=messageOrder&sort%5B0%5D%5Bdirection%5D=asc' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "666569f9-a9b0-4675-96a3-ec3eeffff415",
+      "name": "Get Conversation History",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1056,
+        288
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "8Wi1V5ujYiar0K2r",
+          "name": "Airtable Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.airtable.com/v0/appv2GNhMPW2m9uBJ/Conversation%20Messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth", 
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { records: [{ fields: { sessionId: $node['Extract Message Data'].json.sessionId || 'unknown', content: $node['Extract Message Data'].json.message || 'No message', role: 'user', timestamp: new Date().toISOString(), messageOrder: 1 } }] } }}",
+        "options": {}
+      },
+      "id": "save-user-message",
+      "name": "Save User Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1248,
+        192
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "8Wi1V5ujYiar0K2r",
+          "name": "Airtable Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format message for AI Agent with Airtable conversation history\nconst extractedData = $node['Extract Message Data'].json;\nconst historyData = $node['Get Conversation History'].json;\n\n// Get user message and session ID\nconst userMessage = extractedData?.message || 'No message found';\nconst sessionId = extractedData?.sessionId || 'unknown';\n\n// Format conversation history from Airtable records\nconst records = historyData?.records || [];\nconst conversationHistory = records.length > 0 \n  ? records.map(record => `${record.fields?.role || 'user'}: ${record.fields?.content || ''}`).join('\\n')\n  : 'This is the start of our conversation.';\n\n// Return formatted data for AI\nreturn [{\n  json: {\n    chatInput: userMessage,\n    message: userMessage,\n    sessionId: sessionId,\n    conversationHistory: conversationHistory,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "cb6aca4c-cc22-4f8c-931e-3fa8a2ece1b4",
+      "name": "Format Message for AI",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1248,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "auto",
+        "text": "You are Layla, an AI consultant for Insight Intelligence.\n\nUse this conversation history for context only - DO NOT repeat or reference it in your response:\n{{$json.conversationHistory}}\n\nWhen users want a demo:\n1. Ask for: first name, last name, email, phone, company\n2. Once you have name + email, YOU MUST call the create_hubspot_lead tool immediately\n3. If you only have name + phone (no email), YOU MUST call the create_airtable_lead tool\n4. After creating the lead, offer calendar times by listing some options\n5. When user picks a time, YOU MUST call the schedule_appointment tool\n\nRespond naturally to the user's current message. NEVER make up appointment details. ALWAYS use the tools.\n\nCurrent user message: {{$json.message}}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1392,
+        288
+      ],
+      "id": "196e98ec-576f-4e63-973d-3000c8f137ba",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {
+          "maxTokens": 400,
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        496
+      ],
+      "id": "767d022d-9c82-4230-a74f-7faed3a5d44b",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Hcl80Kzyc0yn9BxQ",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "create_hubspot_lead",
+        "description": "Create a complete lead in HubSpot CRM when user provides name and email address. Use this for qualified leads with complete contact information.",
+        "jsCode": "// Create HubSpot lead using the provided contact information\nconst { firstName, lastName, email, phone, company } = $input.first().json;\n\n// In a real implementation, this would make actual HubSpot API call\n// For now, return a success message\nconst leadId = 'hs_' + Date.now();\n\nreturn `✅ Successfully created HubSpot lead for ${firstName} ${lastName || ''} (${email}). Contact ID: ${leadId}. I'll now check available demo times for you!`;"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        112
+      ],
+      "id": "1dab467c-26af-4b42-a52f-2df2f91c2bd2",
+      "name": "HubSpot Lead Tool"
+    },
+    {
+      "parameters": {
+        "name": "create_airtable_lead",
+        "description": "Create an incomplete lead in Airtable when user provides name and phone but no email. Use this for partial leads that need follow-up.",
+        "jsCode": "// Create Airtable incomplete lead\nconst { firstName, lastName, phone, company } = $input.first().json;\n\n// In a real implementation, this would make actual Airtable API call\nconst leadId = 'at_' + Date.now();\n\nreturn `✅ Successfully created Airtable lead for ${firstName} ${lastName || ''} (${phone}). Lead ID: ${leadId}. Since I don't have your email yet, someone from our team will call you to follow up and schedule your demo.`;"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        112
+      ],
+      "id": "44e56d2c-8119-41d4-a7ef-697ef58a7e77",
+      "name": "Airtable Lead Tool"
+    },
+    {
+      "parameters": {
+        "name": "schedule_appointment",
+        "description": "Schedule a demo appointment. Parameters: appointmentTime (the specific day/time), customerName (first and last name), email (customer's email address)",
+        "jsCode": "// Schedule appointment for specified time\nconst inputData = $input.first().json;\n\n// Debug: show what we received in the response\nconst debugInfo = `DEBUG INPUT: ${JSON.stringify(inputData, null, 2)}`;\n\nconst appointmentTime = inputData.appointmentTime || 'requested time';\nconst customerName = inputData.customerName || 'Customer';\nconst email = inputData.email || '';\n\n// In a real implementation, this would:\n// 1. Check calendar availability\n// 2. Create calendar event\n// 3. Send confirmation email\n// 4. Add to CRM\n\nconst appointmentId = 'apt_' + Date.now();\n\nreturn `✅ Perfect! I've scheduled your demo appointment for ${appointmentTime}. \\n\\nAppointment Details:\\n- Time: ${appointmentTime}\\n- Attendee: ${customerName}\\n- Appointment ID: ${appointmentId}\\n\\nYou'll receive a calendar invitation shortly at ${email}. Looking forward to showing you how our AI automation can transform your business!\\n\\n${debugInfo}`;"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        112
+      ],
+      "id": "5c991307-2265-468a-b8a7-2433898128d7",
+      "name": "Calendar Tool"
+    },
+    {
+      "parameters": {
+        "name": "save_conversation",
+        "description": "Save conversation to Airtable Messages for context and analytics. Call with: {userMessage: 'user text', aiResponse: 'your response', sessionId: 'session_id', userId: 'user_id'}",
+        "jsCode": "// Save conversation to Airtable Messages\nconst inputData = $input.first().json;\nconst userMessage = inputData.userMessage || 'No user message';\nconst aiResponse = inputData.aiResponse || 'No AI response';\nconst sessionId = inputData.sessionId || 'unknown';\nconst userId = inputData.userId || 'anonymous';\n\n// In a real implementation, this would make actual Airtable API call\nconst saveId = 'save_' + Date.now();\n\nreturn `✅ Conversation saved successfully. Record ID: ${saveId}`;"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        112
+      ],
+      "id": "4c64afb4-a913-439e-96ff-91b981c5522b",
+      "name": "Save Conversation Tool"
+    },
+    {
+      "parameters": {
+        "url": "https://api.airtable.com/v0/appv2GNhMPW2m9uBJ/Conversation%20Messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth", 
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { records: [{ fields: { sessionId: $node['Extract Message Data'].json.sessionId || 'unknown', content: typeof $json === 'string' ? $json : ($json.output || $json.text || JSON.stringify($json)), role: 'assistant', timestamp: new Date().toISOString(), messageOrder: ($node['Get Conversation History'].json.records || []).length + 2 } }] } }}",
+        "options": {}
+      },
+      "id": "save-ai-response",
+      "name": "Save AI Response",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1584,
+        288
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "8Wi1V5ujYiar0K2r",
+          "name": "Airtable Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { response: typeof $json === 'string' ? $json : ($json.output || $json.text || JSON.stringify($json)) } }}",
+        "options": {}
+      },
+      "id": "ac858900-4727-4380-aa68-cad9251e25f3",
+      "name": "Send Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1776,
+        288
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Chat Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Message Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Message Data": {
+      "main": [
+        [
+          {
+            "node": "Get Conversation History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Conversation History": {
+      "main": [
+        [
+          {
+            "node": "Format Message for AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Message for AI": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save User Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot Lead Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable Lead Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Calendar Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Save Conversation Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Save AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save AI Response": {
+      "main": [
+        [
+          {
+            "node": "Send Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "7e3bdd9c-ac02-4560-be35-53fee1af9071",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "99aaeba6b75257ee350bb8eb8800a228cb7b97e21f9b2e1e88ec25277f30b9a0"
+  },
+  "id": "rwOjlTL3dOdXh1QR",
+  "tags": []
+}

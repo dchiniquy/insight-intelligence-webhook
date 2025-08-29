@@ -8,13 +8,13 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "48e08237-5517-4e73-9605-c2ef5804bc5e",
+      "id": "b834b2f9-b510-466c-8484-42f13d48fe06",
       "name": "Chat Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -2032,
-        192
+        -2704,
+        -32
       ],
       "webhookId": "auto-generated"
     },
@@ -54,48 +54,48 @@
         },
         "options": {}
       },
-      "id": "05dd8e68-902c-4bed-9b9d-70accc833591",
+      "id": "e21cbca9-198a-4842-ae8a-3e7b03df9b4d",
       "name": "Extract Message Data",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        -1792,
-        192
+        -2464,
+        -272
       ]
     },
     {
       "parameters": {
-        "url": "https://api.jsonbin.io/v3/b/68aa5ec143b1c97be926f1d0",
+        "url": "={{ 'https://api.airtable.com/v0/appv2GNhMPW2m9uBJ/Conversation%20Messages?filterByFormula=' + encodeURIComponent('{sessionId}=\"' + ($node['Extract Message Data'].json['sessionId'] || 'unknown') + '\"') + '&sort%5B0%5D%5Bfield%5D=messageOrder&sort%5B0%5D%5Bdirection%5D=asc' }}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "httpHeaderAuth",
         "options": {}
       },
-      "id": "93b87bd7-5646-47f2-be9b-cee23ab9905c",
-      "name": "Get JSONBin Data",
+      "id": "5e89cb5e-ab54-4516-b8f8-74147e8eed9f",
+      "name": "Get Conversation History",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        -1552,
-        192
+        -2336,
+        32
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "zbXUZibXzpKhXdTc",
-          "name": "jsonbin auth"
+          "id": "8Wi1V5ujYiar0K2r",
+          "name": "Airtable Auth"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "// Handle empty or malformed JSONBin data\nconst rawData = $json;\nconst sessionId = $node['Extract Message Data'].json['sessionId'] || 'unknown';\nconst message = $node['Extract Message Data'].json['message'] || '';\n\n// Initialize default structure if bin is empty or malformed\nlet binData = {\n  conversations: {},\n  stats: {\n    totalSessions: 0,\n    lastUpdated: new Date().toISOString()\n  }\n};\n\n// Try to get the actual data from JSONBin response\nif (rawData && rawData.record) {\n  // JSONBin wraps data in 'record' property\n  binData = rawData.record;\n} else if (rawData && rawData.conversations) {\n  // Direct data structure\n  binData = rawData;\n}\n\n// Ensure conversations object exists\nif (!binData.conversations) {\n  binData.conversations = {};\n}\n\n// Ensure stats object exists\nif (!binData.stats) {\n  binData.stats = {\n    totalSessions: 0,\n    lastUpdated: new Date().toISOString()\n  };\n}\n\n// Build session key\nconst sessionKey = 'session_' + sessionId;\n\n// Get conversation history (empty array if not exists)\nconst conversationHistory = binData.conversations[sessionKey]?.messages || [];\n\n// Get existing conversation data\nconst existingConversation = binData.conversations[sessionKey] || null;\n\nreturn {\n  json: {\n    conversationHistory: conversationHistory,\n    currentMessage: message,\n    sessionKey: sessionKey,\n    fullBinData: JSON.stringify(binData),\n    existingConversation: existingConversation,\n    binDataObject: binData\n  }\n};"
+        "jsCode": "const response = $json || {}; const airtableRecords = response.records || []; const sessionId = $node['Extract Message Data'].json['sessionId'] || 'unknown'; const message = $node['Extract Message Data'].json['message'] || ''; console.log('=== CONVERSATION HISTORY DEBUG ==='); console.log('Current Session ID:', sessionId); console.log('Airtable Filter URL used:', $node['Get Conversation History'].json); console.log('Records returned by filter:', airtableRecords.length); console.log('Record session IDs:', airtableRecords.map(r => r.fields?.sessionId)); const conversationHistory = airtableRecords.map(record => { const fields = record.fields || {}; return { role: fields.role || 'user', content: fields.content || '', timestamp: fields.timestamp || new Date().toISOString() }; }).filter(msg => msg.content.trim() !== ''); const nextMessageOrder = airtableRecords.length > 0 ? Math.max(...airtableRecords.map(r => (r.fields && r.fields.messageOrder) || 0)) + 1 : 1; let existingLeadInfo = null; for (const record of airtableRecords) { const metadata = record.fields?.metadata; if (metadata) { try { const parsedMeta = JSON.parse(metadata); if (parsedMeta.leadInfo) { existingLeadInfo = parsedMeta.leadInfo; break; } } catch (e) {} } } console.log('Processed Conversation History:', conversationHistory.length, 'messages'); console.log('=== END CONVERSATION DEBUG ==='); return { json: { conversationHistory: conversationHistory, currentMessage: message, sessionId: sessionId, nextMessageOrder: nextMessageOrder, totalMessages: airtableRecords.length, existingLeadInfo: existingLeadInfo, isExistingLead: !!existingLeadInfo, existingConversation: airtableRecords.length > 0 ? { sessionId: sessionId, messageCount: airtableRecords.length, lastActivity: airtableRecords[airtableRecords.length - 1]?.fields?.timestamp || new Date().toISOString() } : null } };"
       },
-      "id": "abba1d16-478f-45cc-b710-2a495d154a7b",
+      "id": "446b22a0-be1d-4094-9fa1-4bc12ef483ea",
       "name": "Extract Conversation Data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1312,
-        192
+        -2208,
+        -256
       ]
     },
     {
@@ -106,16 +106,16 @@
         "nodeCredentialType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'You are an expert intent classifier for business conversations. Analyze the user message and classify their intent across multiple dimensions. Provide a JSON response following this exact schema: { primary_intent: (one of: information_gathering, demo_request, pricing_inquiry, technical_support, lead_qualification, objection_handling, scheduling, general_conversation), lead_quality: (one of: hot, warm, cold, nurture), urgency_level: (one of: immediate, soon, flexible, exploring), business_context: (one of: existing_customer, competitor_research, budget_approved, early_stage, decision_maker, influencer), specific_interests: (array of: ai_phone_system, website_chat, crm_integration, roi_analysis, implementation_timeline, support_training), conversation_stage: (one of: introduction, discovery, presentation, objection, closing, follow_up), confidence_score: (number 0-1), next_best_action: (one of: continue_conversation, request_contact_info, schedule_demo, provide_pricing, escalate_to_human, send_resources) }. Be accurate and provide realistic confidence scores.' }, { role: 'user', content: $node['Extract Message Data'].json['message'] }], temperature: 0.1, max_tokens: 300, response_format: { type: 'json_object' } } }}",
+        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'You are Ava, an AI assistant. Classify user intent and extract contact info. IMPORTANT: Ava is YOUR name - ignore greetings to Ava. DEMO REQUESTS: Messages like \"I want a demo\", \"show me a demo\", \"I would like a demo\", \"can I see a demo\" should be classified as demo_request with hot lead quality. CONTACT INFO: Extract user contact details (names, emails, phones). Return JSON with primary_intent (demo_request, contact_provided, pricing_inquiry, general_conversation), lead_quality (hot, warm, cold), extracted_contact fields.' }, { role: 'user', content: $node['Extract Message Data'].json['message'] || '' }], temperature: 0.1, max_tokens: 400, response_format: { type: 'json_object' } } }}",
         "options": {}
       },
-      "id": "89d9e0ee-be55-4e87-9ab4-072ebdf3fe56",
+      "id": "07e3e16a-b5cc-4e13-a0d7-b29e60995651",
       "name": "AI Intent Classification",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        -1072,
-        192
+        -2048,
+        48
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -126,56 +126,15 @@
     },
     {
       "parameters": {
-        "jsCode": "// Parse AI intent classification and create routing logic\nconst aiResponse = $json.choices[0].message.content;\nlet classification;\n\ntry {\n  classification = JSON.parse(aiResponse);\n} catch (e) {\n  // Fallback classification if parsing fails\n  classification = {\n    primary_intent: 'general_conversation',\n    lead_quality: 'cold',\n    urgency_level: 'exploring',\n    confidence_score: 0.5,\n    next_best_action: 'continue_conversation'\n  };\n}\n\n// Determine routing paths based on classification\nconst isHighIntentLead = \n  (classification.primary_intent === 'demo_request' || \n   classification.primary_intent === 'pricing_inquiry' ||\n   classification.primary_intent === 'scheduling') &&\n  (classification.lead_quality === 'hot' || classification.lead_quality === 'warm') &&\n  classification.confidence_score > 0.6;\n\nconst shouldRequestContact = \n  classification.next_best_action === 'request_contact_info' ||\n  classification.next_best_action === 'schedule_demo' ||\n  (classification.lead_quality === 'hot' && classification.urgency_level === 'immediate');\n\n// Return classification data with routing flags\nreturn {\n  json: {\n    ...classification,\n    // Routing flags\n    isHighIntentLead: isHighIntentLead,\n    shouldRequestContact: shouldRequestContact,\n    useLeadFlow: isHighIntentLead || shouldRequestContact,\n    // Conversation context for enhanced prompts\n    conversationContext: {\n      stage: classification.conversation_stage || 'discovery',\n      interests: (classification.specific_interests || []).join(', '),\n      businessContext: classification.business_context || 'unknown',\n      urgency: classification.urgency_level || 'exploring'\n    }\n  }\n};"
+        "jsCode": "// Parse AI intent classification and create routing logic\nconst aiResponse = $json.choices[0].message.content;\nlet classification;\n\ntry {\n  classification = JSON.parse(aiResponse);\n} catch (e) {\n  // Fallback classification if parsing fails\n  classification = {\n    primary_intent: 'general_conversation',\n    lead_quality: 'cold',\n    urgency_level: 'exploring',\n    confidence_score: 0.3,\n    next_best_action: 'continue_conversation'\n  };\n}\n\n// SIMPLIFIED ROUTING: Any business intent is a lead\nconst isHighIntentLead = \n  classification.primary_intent === 'demo_request' ||\n  classification.primary_intent === 'pricing_inquiry' ||\n  classification.primary_intent === 'contact_provided' ||\n  classification.primary_intent === 'lead_qualification' ||\n  classification.primary_intent === 'scheduling';\n\n// DEBUG: Always log the classification\nconsole.log('AI Classification:', JSON.stringify(classification));\nconsole.log('Is High Intent Lead:', isHighIntentLead);\n\n// Return classification data with routing flags\nreturn {\n  json: {\n    ...classification,\n    // Routing flags\n    isHighIntentLead: Boolean(isHighIntentLead),\n    useLeadFlow: isHighIntentLead,\n    debugInfo: {\n      originalIntent: classification.primary_intent,\n      leadQuality: classification.lead_quality,\n      routingDecision: isHighIntentLead ? 'LEAD_PATH' : 'STANDARD_PATH'\n    }\n  }\n};"
       },
-      "id": "22c61f1b-b813-4c33-b3a2-840cd7d39c8d",
+      "id": "3c0e4823-13c9-446c-b3d1-ae7b054c6089",
       "name": "Process Intent Classification",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -928,
-        -32
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "conditions": [
-            {
-              "leftValue": "={{$json.primary_intent}}",
-              "rightValue": "demo_request",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
-            },
-            {
-              "leftValue": "={{$json.primary_intent}}",
-              "rightValue": "pricing_inquiry",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
-            },
-            {
-              "leftValue": "={{$json.primary_intent}}",
-              "rightValue": "scheduling",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "de04eb88-c1c7-4537-88d2-2ba58d8597e9",
-      "name": "Intelligent Routing",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [
-        -816,
-        192
+        -1856,
+        -320
       ]
     },
     {
@@ -186,16 +145,16 @@
         "nodeCredentialType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'You are Ava, your AI Automation Specialist and Solutions Consultant for Insight Intelligence. Your mission is to help service-based business owners reduce phone handling costs by 60-80% and recover the $58K+ they are losing annually from missed calls, poor follow-up, and operational inefficiencies. Core Positioning: Your AI Automation Specialist - Solutions that work in 3 days, not 3 months. Key differentiator: 5-second response time, 3-day setup vs competitors 3-6 months. CONVERSATION CONTEXT: User intent classified as ' + ($node['Process Intent Classification'].json[0]['primary_intent'] || 'general_conversation') + ' with ' + ($node['Process Intent Classification'].json[0]['lead_quality'] || 'unknown') + ' lead quality and ' + ($node['Process Intent Classification'].json[0]['urgency_level'] || 'exploring') + ' urgency level. They are in the ' + ($node['Process Intent Classification'].json[0]['conversation_stage'] || 'discovery') + ' stage. Specific interests: ' + ($node['Process Intent Classification'].json[0]['conversationContext']['interests'] || 'general inquiry') + '. Business context: ' + ($node['Process Intent Classification'].json[0]['business_context'] || 'unknown') + '. Confidence: ' + ($node['Process Intent Classification'].json[0]['confidence_score'] || 0.5) + '. Tailor your response accordingly while emphasizing speed, efficiency, and proven $58K+ savings.' }].concat($node['Extract Conversation Data'].json['conversationHistory'] || []).concat([{ role: 'user', content: $node['Extract Message Data'].json['message'] }]), temperature: 0.7, max_tokens: 250 } }}",
+        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'You are Ava, AI Automation Specialist for Insight Intelligence. ' + ($node['Process Intent Classification'].json.primary_intent === 'demo_request' || $node['Process Intent Classification'].json.lead_quality === 'hot' ? 'DEMO REQUEST: User wants a demo. Respond: Perfect! I would love to show you how our AI automation can save your business $58K+ annually. To schedule your 15-minute demo, I just need: Your name, Email address, Phone number, and What type of business you have. Could you please provide those details?' : $node['Process Intent Classification'].json.primary_intent === 'contact_provided' ? 'CONTACT CONTEXT: User provided contact info. Confirm details and schedule demo.' : 'CONVERSATION CONTEXT: General inquiry. Be helpful and guide toward demo if appropriate.') }].concat($node['Extract Conversation Data'].json.conversationHistory || []).concat([{ role: 'user', content: $node['Extract Message Data'].json.message || '' }]), temperature: 0.7, max_tokens: 250 } }}",
         "options": {}
       },
-      "id": "21c35b30-5c94-46c0-a0ea-44f2b0fa6f1e",
-      "name": "Generate Standard Response",
+      "id": "f8ce5bee-15bf-4ff8-ac68-07946d4adae3",
+      "name": "Generate Unified Response",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        -592,
-        -144
+        -1632,
+        -320
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -206,259 +165,34 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "https://api.openai.com/v1/chat/completions",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "httpHeaderAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ { model: 'gpt-4o-mini', messages: [{ role: 'system', content: 'You are Ava, your AI Automation Specialist for Insight Intelligence. LEAD QUALIFICATION CONTEXT: User classified as ' + ($json['lead_quality'] || 'unknown') + ' lead with ' + ($json['primary_intent'] || 'general') + ' intent, ' + ($json['urgency_level'] || 'exploring') + ' urgency, confidence: ' + ($json['confidence_score'] || 0.5) + '. SPECIFIC GUIDANCE BY INTENT: **Demo Request/Scheduling**: Perfect! I can set up a personalized demo to show you exactly how our AI system (that sets up in 3 days vs competitors 3-6 months) would handle your specific business calls. To get you connected with the right specialist, I just need: Your name and the best phone number to reach you. This will be a brief 15-minute call where we can show you live examples and calculate your $58K+ savings potential. **Pricing Inquiry**: I would love to provide you with accurate pricing based on your specific needs. Our ROI typically shows $58K+ in recovered revenue plus 60-80% reduction in current phone costs. To give you precise numbers, I need: Your name, phone number, and a quick sense of your call volume. This allows us to calculate your exact savings potential and show you how we set up in 3 days. **General Lead Qualification**: Based on what you are telling me, our system could significantly impact your business. Many clients in your situation recover $58K+ annually from missed opportunities and reduce phone costs by 60-80%. To show you exactly how this would work for your business: I need your name and phone number for a quick consultation call. TONE ADJUSTMENT: Hot leads (' + ($json['urgency_level'] || 'exploring') + ' urgency): Be direct, immediate, action-oriented, emphasize 3-day setup. Warm leads: Be consultative but clear about next steps and speed advantage. CRITICAL: Always ask for BOTH name AND phone number specifically. Emphasize 3-day setup vs competitors and $58K+ proven savings. Make the value proposition clear and the next step obvious.' }].concat($node['Extract Conversation Data'].json['conversationHistory'] || []).concat([{ role: 'user', content: $node['Extract Message Data'].json['message'] }]), temperature: 0.7, max_tokens: 350 } }}",
-        "options": {}
+        "jsCode": "console.log('=== UNIFIED PROCESSOR START ==='); const classification = $node['Process Intent Classification'].json; const aiResponse = $json.choices[0].message.content; const message = $node['Extract Message Data'].json.message || ''; const sessionId = $node['Extract Message Data'].json.sessionId || 'unknown'; const conversationData = $node['Extract Conversation Data'].json; console.log('Input data:', { message, sessionId, classification }); let contactInfo = { email: null, phone: null, name: null, firstName: null, lastName: null, hasEmail: false, hasPhone: false, hasName: false }; let contactProcessed = false; if (conversationData.isExistingLead && conversationData.existingLeadInfo) { contactInfo = conversationData.existingLeadInfo; contactProcessed = true; console.log('Using existing lead info:', contactInfo); } else { const isLead = (classification.primary_intent === 'demo_request' || classification.primary_intent === 'contact_provided' || classification.primary_intent === 'pricing_inquiry') && (classification.lead_quality === 'hot' || classification.lead_quality === 'warm'); console.log('Is Lead Decision:', { isLead, intent: classification.primary_intent, quality: classification.lead_quality }); if (isLead && classification.extracted_contact) { console.log('Using AI-extracted contact info:', classification.extracted_contact); contactInfo = { email: classification.extracted_contact.email || null, phone: classification.extracted_contact.phone || null, name: classification.extracted_contact.name || null, firstName: classification.extracted_contact.firstName || null, lastName: classification.extracted_contact.lastName || null, hasEmail: Boolean(classification.extracted_contact.hasEmail), hasPhone: Boolean(classification.extracted_contact.hasPhone), hasName: Boolean(classification.extracted_contact.hasName) }; contactProcessed = Boolean(contactInfo.hasEmail || contactInfo.hasPhone || contactInfo.hasName); } else if (message.includes('@') || /\\d{10}/.test(message)) { console.log('Fallback regex extraction...'); const emailMatch = message.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})/); const phoneMatch = message.match(/(\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}|\\d{10})/); if (emailMatch) { contactInfo.email = emailMatch[1].trim(); contactInfo.hasEmail = true; contactProcessed = true; } if (phoneMatch) { contactInfo.phone = phoneMatch[1].trim(); contactInfo.hasPhone = true; contactProcessed = true; } } console.log('Final extracted contact info:', contactInfo); } console.log('=== UNIFIED PROCESSOR END ==='); return { json: { response: aiResponse, sessionId: sessionId, timestamp: new Date().toISOString(), status: 'success', contactInfo: contactInfo, contactProcessed: contactProcessed, classification: { intent: classification.primary_intent || 'unknown', quality: classification.lead_quality || 'unknown', confidence: classification.confidence_score || 0, extracted_contact: classification.extracted_contact || null }, quickActions: [] } };"
       },
-      "id": "3691bd67-2ad6-4e2f-b95b-1758058cabd8",
-      "name": "Generate Lead Response",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        -576,
-        176
-      ],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "z3EpNCqUns8T3dP1",
-          "name": "openapiHeaderAuth"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "values": {
-          "string": [
-            {
-              "name": "ai_response",
-              "value": "={{$json.choices[0].message.content}}"
-            },
-            {
-              "name": "updatedMessages",
-              "value": "={{(($node['Extract Conversation Data'].json['conversationHistory'] || [])).concat([{\"role\": \"user\", \"content\": $node['Extract Message Data'].json['message'], \"timestamp\": $node['Extract Message Data'].json['timestamp']}, {\"role\": \"assistant\", \"content\": $json.choices[0].message.content, \"timestamp\": DateTime.now().toISO()}])}}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "99039b7e-2dad-4a20-8cab-c9abea076851",
-      "name": "Prepare Standard Response",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 1,
-      "position": [
-        -352,
-        -144
-      ]
-    },
-    {
-      "parameters": {
-        "values": {
-          "string": [
-            {
-              "name": "ai_response",
-              "value": "={{$json.choices[0].message.content}}"
-            },
-            {
-              "name": "updatedMessages",
-              "value": "={{(($node['Extract Conversation Data'].json['conversationHistory'] || [])).concat([{\"role\": \"user\", \"content\": $node['Extract Message Data'].json['message'], \"timestamp\": $node['Extract Message Data'].json['timestamp']}, {\"role\": \"assistant\", \"content\": $json.choices[0].message.content, \"timestamp\": DateTime.now().toISO()}])}}"
-            },
-            {
-              "name": "primary_intent",
-              "value": "={{$node['Intelligent Routing'].json['primary_intent'] || 'unknown'}}"
-            },
-            {
-              "name": "lead_quality",
-              "value": "={{$node['Intelligent Routing'].json['lead_quality'] || 'unknown'}}"
-            },
-            {
-              "name": "urgency_level",
-              "value": "={{$node['Intelligent Routing'].json['urgency_level'] || 'unknown'}}"
-            },
-            {
-              "name": "confidence_score",
-              "value": "={{$node['Intelligent Routing'].json['confidence_score'] || 0}}"
-            },
-            {
-              "name": "next_best_action",
-              "value": "={{$node['Intelligent Routing'].json['next_best_action'] || 'unknown'}}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "080025e4-2149-4e17-8f83-f3a081706b21",
-      "name": "Prepare Lead Response",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 1,
-      "position": [
-        -352,
-        288
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "const binData = JSON.parse($node['Extract Conversation Data'].json['fullBinData'] || '{}');\nconst sessionKey = $node['Extract Conversation Data'].json['sessionKey'];\nconst sessionId = $node['Extract Message Data'].json['sessionId'];\nconst userId = $node['Extract Message Data'].json['userId'];\nconst updatedMessages = $node['Prepare Standard Response'].json['updatedMessages'];\n\n// Update or create conversation\nbinData.conversations[sessionKey] = {\n  sessionId: sessionId,\n  userId: userId,\n  createdAt: binData.conversations[sessionKey]?.createdAt || DateTime.now().toISO(),\n  lastActivity: DateTime.now().toISO(),\n  messages: updatedMessages,\n  metadata: {\n    leadStatus: \"engaged\",\n    businessType: binData.conversations[sessionKey]?.metadata?.businessType || \"unknown\",\n    contactProvided: binData.conversations[sessionKey]?.metadata?.contactProvided || false,\n    demoRequested: binData.conversations[sessionKey]?.metadata?.demoRequested || false,\n    intentClassification: {\n      primaryIntent: $node['Process Intent Classification'].json[0]['primary_intent'] || 'unknown',\n      leadQuality: $node['Process Intent Classification'].json[0]['lead_quality'] || 'unknown',\n      urgencyLevel: $node['Process Intent Classification'].json[0]['urgency_level'] || 'unknown',\n      confidenceScore: $node['Process Intent Classification'].json[0]['confidence_score'] || 0,\n      nextBestAction: $node['Process Intent Classification'].json[0]['next_best_action'] || 'unknown'\n    }\n  }\n};\n\n// Update stats\nbinData.stats.totalSessions = Object.keys(binData.conversations).length;\nbinData.stats.lastUpdated = DateTime.now().toISO();\n\nreturn { json: { updatedBinData: binData } };"
-      },
-      "id": "6f54534f-249b-4bba-b7fd-a5cbea792235",
-      "name": "Build Updated Bin (Standard)",
+      "id": "6ad356e2-539f-4fdf-a74e-993c4e242c68",
+      "name": "Process Contact & Respond",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -336,
-        64
+        -1440,
+        48
       ]
     },
     {
       "parameters": {
-        "jsCode": "const binData = JSON.parse($node['Extract Conversation Data'].json['fullBinData'] || '{}');\nconst sessionKey = $node['Extract Conversation Data'].json['sessionKey'];\nconst sessionId = $node['Extract Message Data'].json['sessionId'];\nconst userId = $node['Extract Message Data'].json['userId'];\nconst updatedMessages = $node['Prepare Lead Response'].json['updatedMessages'];\n\n// Update or create conversation\nbinData.conversations[sessionKey] = {\n  sessionId: sessionId,\n  userId: userId,\n  createdAt: binData.conversations[sessionKey]?.createdAt || DateTime.now().toISO(),\n  lastActivity: DateTime.now().toISO(),\n  messages: updatedMessages,\n  metadata: {\n    leadStatus: \"qualified\",\n    businessType: binData.conversations[sessionKey]?.metadata?.businessType || \"unknown\",\n    contactProvided: binData.conversations[sessionKey]?.metadata?.contactProvided || false,\n    demoRequested: true,\n    intentClassification: {\n      primaryIntent: $node['Prepare Lead Response'].json['primary_intent'] || 'unknown',\n      leadQuality: $node['Prepare Lead Response'].json['lead_quality'] || 'unknown',\n      urgencyLevel: $node['Prepare Lead Response'].json['urgency_level'] || 'unknown',\n      confidenceScore: $node['Prepare Lead Response'].json['confidence_score'] || 0,\n      nextBestAction: $node['Prepare Lead Response'].json['next_best_action'] || 'unknown'\n    }\n  }\n};\n\n// Update stats\nbinData.stats.totalSessions = Object.keys(binData.conversations).length;\nbinData.stats.lastUpdated = DateTime.now().toISO();\n\nreturn { json: { updatedBinData: binData } };"
+        "jsCode": "const message = $node['Extract Message Data'].json.message || ''; const classification = $node['Process Intent Classification'].json; const unifiedData = $node['Process Contact & Respond'].json; console.log('Extract Contact Details - Processing message:', message); console.log('Classification intent:', classification?.primary_intent); let firstName = 'Chat'; let lastName = 'Lead'; let email = null; let phone = null; let hasEmail = false; let hasPhone = false; let hasName = false; const emailMatch = message.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})/); if (emailMatch) { email = emailMatch[1].trim(); hasEmail = true; console.log('Email extracted:', email); } const phoneMatch = message.match(/(\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}|\\d{10}|\\+\\d{1,4}[-.\\s]?\\(?\\d{1,4}\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9})/); if (phoneMatch) { phone = phoneMatch[1].trim(); hasPhone = true; console.log('Phone extracted:', phone); } if (classification?.primary_intent === 'contact_provided' || (classification?.extracted_contact && (classification.extracted_contact.hasName || classification.extracted_contact.name))) { console.log('AI detected contact provided - extracting names'); let nameMatch = message.match(/(?:my name is|i'm|i am|call me|contact|name:|first name|last name)\\s+([a-zA-Z]{2,}(?:\\s+[a-zA-Z]{2,})?)/i); if (!nameMatch) { nameMatch = message.match(/^([a-zA-Z]{2,}\\s+[a-zA-Z]{2,})/); } if (nameMatch) { const fullName = nameMatch[1].trim(); if (fullName.toLowerCase() !== 'ava') { const nameParts = fullName.split(/\\s+/); firstName = nameParts[0]; lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'Lead'; hasName = true; console.log('Name extracted:', firstName, lastName); } } if (!hasName && classification?.extracted_contact) { const aiContact = classification.extracted_contact; if (aiContact.firstName && aiContact.firstName.toLowerCase() !== 'ava') { firstName = aiContact.firstName; lastName = aiContact.lastName || 'Lead'; hasName = true; console.log('Using AI extracted name:', firstName, lastName); } } } if (!hasName && unifiedData?.contactInfo?.firstName && unifiedData.contactInfo.firstName !== 'Chat') { firstName = unifiedData.contactInfo.firstName; lastName = unifiedData.contactInfo.lastName || 'Lead'; hasName = true; console.log('Using unified data name:', firstName, lastName); } const contactProcessed = hasEmail || hasPhone || hasName; console.log('Contact extraction results:', { firstName, lastName, email, phone, hasEmail, hasPhone, hasName, contactProcessed }); return [{ firstName: firstName, lastName: lastName, email: email, phone: phone, hasEmail: hasEmail, hasPhone: hasPhone, hasName: hasName, contactProcessed: contactProcessed, readyForDemo: contactProcessed, processingPath: contactProcessed ? 'LEAD_WITH_CONTACT' : 'SIMPLE_RESPONSE' }];"
       },
-      "id": "03eedadf-1042-41cc-87c6-c2c91148702d",
-      "name": "Build Updated Bin (Lead)",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -352,
-        480
-      ]
-    },
-    {
-      "parameters": {
-        "method": "PUT",
-        "url": "https://api.jsonbin.io/v3/b/68aa5ec143b1c97be926f1d0",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "httpHeaderAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{$json.updatedBinData}}",
-        "options": {}
-      },
-      "id": "5e1b8b02-3565-4ea7-92fd-89d73eac66b2",
-      "name": "Update JSONBin (Standard)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        -112,
-        80
-      ],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "zbXUZibXzpKhXdTc",
-          "name": "jsonbin auth"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "PUT",
-        "url": "https://api.jsonbin.io/v3/b/68aa5ec143b1c97be926f1d0",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "httpHeaderAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{$json.updatedBinData}}",
-        "options": {}
-      },
-      "id": "dc4beb57-1c06-4557-a5b4-37aedab43cfb",
-      "name": "Update JSONBin (Lead)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        -96,
-        384
-      ],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "zbXUZibXzpKhXdTc",
-          "name": "jsonbin auth"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": false,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
-          "conditions": [
-            {
-              "id": "complete-lead",
-              "leftValue": "={{$node['Extract Message Data'].json['message']}}",
-              "rightValue": "([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})",
-              "operator": {
-                "type": "string",
-                "operation": "regex"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "9a00e03c-7e3e-439a-93d2-ad133d81b44c",
-      "name": "Check Contact Info",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [
-        128,
-        192
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "// Extract contact details from user message\nconst message = $node['Extract Message Data'].json.message || '';\nconst sessionId = $node['Extract Message Data'].json.sessionId || 'unknown';\n\n// Extract name - try multiple patterns\nlet nameMatch = message.match(/(?:my name is|i'm|i am|call me|contact|name:|first name|last name)\\s+([a-zA-Z]{2,}(?:\\s+[a-zA-Z]{2,})?)/i);\n\n// If no formal introduction, try to find name at beginning of message\nif (!nameMatch) {\n  nameMatch = message.match(/^([a-zA-Z]{2,}\\s+[a-zA-Z]{2,})/);\n}\n\nlet firstName = 'Chat';\nlet lastName = 'Lead';\n\nif (nameMatch) {\n  const fullName = nameMatch[1].trim();\n  const nameParts = fullName.split(/\\s+/);\n  firstName = nameParts[0];\n  lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'Lead';\n}\n\n// Extract phone\nconst phoneMatch = message.match(/(\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}|\\d{10}|\\+\\d{1,4}[-.\\s]?\\(?\\d{1,4}\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9})/);\nconst phone = phoneMatch ? phoneMatch[0].replace(/[()\\s-]/g, '') : '';\n\n// Extract email (no dummy generation - handled by routing)\nconst emailMatch = message.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,})/);\nconst email = emailMatch ? emailMatch[0].toLowerCase() : '';\n\n// Return contact details\nreturn [{\n  firstName: firstName,\n  lastName: lastName,\n  phone: phone,\n  email: email,\n  hasEmail: !!email,\n  hasName: !!nameMatch,\n  hasPhone: !!phoneMatch\n}];"
-      },
-      "id": "963d1607-c3c1-415f-91e8-632983858e75",
+      "id": "b8746721-865c-467d-97f8-6a8dbb7a928b",
       "name": "Extract Contact Details",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        192,
-        448
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": false,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
-          "conditions": [
-            {
-              "id": "has-name-or-phone",
-              "leftValue": "={{$node['Extract Message Data'].json['message']}}",
-              "rightValue": "(my name is|i'm|i am|call me|contact|name:|first name|last name|\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}|\\d{10}|\\+\\d{1,4}[-.\\s]?\\(?\\d{1,4}\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9})",
-              "operator": {
-                "type": "string",
-                "operation": "regex"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "6b333d67-3ebf-450a-82f8-2416a0edf3fb",
-      "name": "Check Incomplete Lead",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [
-        384,
-        192
+        -1216,
+        48
       ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.airtable.com/v0/appv2GNhMPW2m9uBJ/Incomplete%20Leads",
+        "url": "https://api.airtable.com/v0/appv2GNhMPW2m9uBJ/Incomplete%20Leads",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "httpHeaderAuth",
         "sendHeaders": true,
@@ -472,18 +206,18 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ {\n  records: [{\n    fields: {\n      firstName: $node['Extract Contact Details'].json.firstName || 'Chat',\n      lastName: $node['Extract Contact Details'].json.lastName || 'Lead', \n      phone: $node['Extract Contact Details'].json.phone || '',\n      message: $node['Extract Message Data'].json.message,\n      sessionId: $node['Extract Message Data'].json.sessionId,\n      timestamp: new Date().toISOString(),\n      leadSource: 'chat',\n      intentClassification: JSON.stringify($node['Process Intent Classification'].json),\n      primaryIntent: $node['Process Intent Classification'].json.primary_intent || 'general_conversation',\n      leadQuality: $node['Process Intent Classification'].json.lead_quality || 'cold',\n      urgencyLevel: $node['Process Intent Classification'].json.urgency_level || 'exploring',\n      vapiCallStatus: 'pending',\n      status: 'new'\n    }\n  }]\n} }}",
+        "jsonBody": "={{ { records: [{ fields: { firstName: $node['Process Contact & Respond'].json.contactInfo.firstName || 'Chat', lastName: $node['Process Contact & Respond'].json.contactInfo.lastName || 'Lead', phone: $node['Process Contact & Respond'].json.contactInfo.phone || '', email: $node['Process Contact & Respond'].json.contactInfo.email || '', message: $node['Extract Message Data'].json.message || '', sessionId: $node['Extract Message Data'].json.sessionId || 'unknown', timestamp: new Date().toISOString(), leadSource: 'chat', status: 'new' } }] } }}",
         "options": {
           "timeout": 10000
         }
       },
-      "id": "92634904-7805-4c6f-baf7-dd46e3685125",
+      "id": "d307ef3f-a468-465c-bd38-4d17bf0a2627",
       "name": "Create Airtable Lead",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        608,
-        592
+        -384,
+        -272
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -494,67 +228,148 @@
     },
     {
       "parameters": {
-        "authentication": "oAuth2",
-        "email": "={{ $json.email }}",
-        "additionalFields": {
-          "companyName": "Chat Lead",
-          "firstName": "={{ $json.firstName }}",
-          "lastName": "={{ $json.lastName }}"
-        },
+        "method": "POST",
+        "url": "https://graph.microsoft.com/v1.0/me/calendar/getSchedule",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftGraphSecurityOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { schedules: ['demie@insightintelligence.io'], startTime: { dateTime: new Date(Date.now() + 24*60*60*1000).toISOString().split('.')[0] + '.000Z', timeZone: 'UTC' }, endTime: { dateTime: new Date(Date.now() + 10*24*60*60*1000).toISOString().split('.')[0] + '.000Z', timeZone: 'UTC' }, availabilityViewInterval: 60 } }}",
         "options": {}
       },
-      "id": "37c80705-ca96-4908-8866-18d657fca0c6",
-      "name": "Create HubSpot Lead",
-      "type": "n8n-nodes-base.hubspot",
-      "typeVersion": 2,
+      "id": "6e20af04-ba36-4b87-8ef3-46609d21e8e9",
+      "name": "Check Calendar Availability",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
       "position": [
-        592,
-        336
+        -224,
+        -32
       ],
       "credentials": {
-        "hubspotOAuth2Api": {
-          "id": "687iXSpXdMKwW2N5",
-          "name": "HubSpot account"
+        "microsoftGraphSecurityOAuth2Api": {
+          "id": "ciNFD0OJwVOtniqA",
+          "name": "Microsoft Graph Security account"
         }
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process calendar availability and suggest demo time slots\nconst schedules = $json.value || [];\nconst contactInfo = $node['Extract Contact Details'].json;\n\n// Process availability data\nlet availableSlots = [];\n\nif (schedules.length > 0) {\n  const schedule = schedules[0];\n  const availabilityView = schedule.availabilityView || '';\n  const workingHours = schedule.workingHours || {};\n  \n  // Parse availability view (0 = Free, 2 = Busy)\n  // Create time slots for the next 7 days during working hours\n  const startDate = new Date();\n  startDate.setDate(startDate.getDate() + 1); // Start tomorrow\n  \n  for (let day = 0; day < 7; day++) {\n    const currentDate = new Date(startDate);\n    currentDate.setDate(startDate.getDate() + day);\n    \n    // Skip weekends (assuming Monday-Friday work schedule)\n    const dayOfWeek = currentDate.getDay();\n    if (dayOfWeek === 0 || dayOfWeek === 6) continue;\n    \n    // Add morning and afternoon slots\n    const morningSlot = new Date(currentDate);\n    morningSlot.setHours(10, 0, 0, 0); // 10 AM\n    \n    const afternoonSlot = new Date(currentDate);\n    afternoonSlot.setHours(14, 0, 0, 0); // 2 PM\n    \n    availableSlots.push({\n      datetime: morningSlot.toISOString(),\n      formatted: morningSlot.toLocaleDateString('en-US', { \n        weekday: 'long', \n        month: 'long', \n        day: 'numeric',\n        hour: 'numeric',\n        minute: '2-digit'\n      }),\n      timeSlot: 'morning',\n      available: true\n    });\n    \n    availableSlots.push({\n      datetime: afternoonSlot.toISOString(),\n      formatted: afternoonSlot.toLocaleDateString('en-US', { \n        weekday: 'long', \n        month: 'long', \n        day: 'numeric',\n        hour: 'numeric',\n        minute: '2-digit'\n      }),\n      timeSlot: 'afternoon',\n      available: true\n    });\n  }\n}\n\n// Take the first 3 available slots\navailableSlots = availableSlots.slice(0, 3);\n\n// Generate response text\nconst slotsText = availableSlots.map((slot, index) => \n  `${index + 1}. ${slot.formatted}`\n).join('\\n');\n\nconst responseText = availableSlots.length > 0 \n  ? `Perfect! I found these available demo times:\\n\\n${slotsText}\\n\\nWhich option works best for you?`\n  : 'Let me check our calendar and get back to you with available demo times.';\n\nreturn {\n  json: {\n    availableSlots: availableSlots,\n    responseText: responseText,\n    hasAvailability: availableSlots.length > 0,\n    contactInfo: contactInfo\n  }\n};"
+      },
+      "id": "faf3b4fc-3bbe-4128-ab3b-24f1f4a6acf7",
+      "name": "Process Available Times",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Enhanced appointment detection logic\nconst slots = $json.availableSlots || [];\nconst contact = $json.contactInfo || {};\nconst userMessage = $node['Extract Message Data'].json.message || '';\n\nconsole.log('APPOINTMENT PREP - User message:', userMessage);\nconsole.log('APPOINTMENT PREP - Available slots:', slots.length);\nconsole.log('APPOINTMENT PREP - Contact info:', JSON.stringify({hasEmail: contact.hasEmail, hasPhone: contact.hasPhone, firstName: contact.firstName}));\n\n// Comprehensive time selection patterns\nconst timeSelectionPatterns = [\n  // Explicit option selection\n  /(?:first|1st|one|option\\s*1)/i,\n  /(?:second|2nd|two|option\\s*2)/i, \n  /(?:third|3rd|three|option\\s*3)/i,\n  \n  // Specific day/time combinations\n  /friday.*(?:at\\s*)?10.*am/i,\n  /friday.*(?:at\\s*)?10:00/i,\n  /friday.*(?:at\\s*)?2.*pm/i, \n  /friday.*(?:at\\s*)?2:00/i,\n  /monday.*(?:at\\s*)?10.*am/i,\n  /monday.*(?:at\\s*)?10:00/i,\n  \n  // Scheduling commitment phrases\n  /(?:I'll take|I will take)/i,\n  /(?:let's book|let's schedule|book that|schedule that)/i,\n  /(?:schedule.*(?:me|that|this|it).*for)/i,\n  /(?:book.*(?:me|that|this|it))/i,\n  /(?:that works|sounds good|looks good)/i,\n  /(?:perfect|great).*(?:time|slot)/i,\n  \n  // Selection phrases\n  /(?:take.*(?:first|that|this))/i,\n  /(?:works.*(?:better|good|fine|for me))/i,\n  /(?:prefer.*(?:that|this))/i,\n  /(?:choose.*(?:that|this|first))/i,\n  \n  // Confirmation phrases\n  /(?:yes.*(?:book|schedule|that|please))/i,\n  /(?:confirm.*(?:appointment|meeting|that))/i,\n  /(?:go ahead|let's do it)/i\n];\n\n// Test each pattern and log detailed results\nconsole.log('APPOINTMENT PREP - Testing', timeSelectionPatterns.length, 'patterns against:', JSON.stringify(userMessage));\nlet matchedPatterns = [];\ntimeSelectionPatterns.forEach((pattern, index) => {\n  const matches = pattern.test(userMessage);\n  if (matches) {\n    matchedPatterns.push(`Pattern ${index}: ${pattern.toString()}`);\n    console.log(`✅ Pattern ${index} MATCHED: ${pattern.toString()}`);\n  } else {\n    console.log(`❌ Pattern ${index} no match: ${pattern.toString()}`);\n  }\n});\n\nconst hasTimeSelection = matchedPatterns.length > 0;\nconsole.log('APPOINTMENT PREP - Time selection detected:', hasTimeSelection, '- Matched patterns:', matchedPatterns.length);\nconsole.log('APPOINTMENT PREP - Contact check - hasEmail:', contact.hasEmail, 'hasPhone:', contact.hasPhone);\nconsole.log('APPOINTMENT PREP - All conditions - hasTimeSelection:', hasTimeSelection, 'slots.length > 0:', slots.length > 0, 'hasContact:', (contact.hasEmail || contact.hasPhone));\n\nif (hasTimeSelection && slots.length > 0 && (contact.hasEmail || contact.hasPhone)) {\n  // SCENARIO: User selected a specific time - CREATE APPOINTMENT\n  const selectedSlot = slots[0];\n  const startTime = new Date(selectedSlot.datetime);\n  const endTime = new Date(startTime.getTime() + 30 * 60000);\n  \n  const appointmentData = {\n    subject: 'AI Automation Demo - ' + (contact.firstName || 'Prospect'),\n    body: {\n      contentType: 'HTML', \n      content: 'Demo call with ' + (contact.firstName || 'Prospect') + ' ' + (contact.lastName || '') + '\\nEmail: ' + (contact.email || 'Not provided') + '\\nPhone: ' + (contact.phone || 'Not provided') + '\\n\\nDiscuss AI automation solutions and $58K+ savings potential.'\n    },\n    start: {\n      dateTime: startTime.toISOString(),\n      timeZone: 'UTC'\n    },\n    end: {\n      dateTime: endTime.toISOString(), \n      timeZone: 'UTC'\n    },\n    attendees: contact.email ? [{\n      emailAddress: {\n        address: contact.email,\n        name: (contact.firstName || 'Prospect') + ' ' + (contact.lastName || '')\n      }\n    }] : [],\n    isOnlineMeeting: true,\n    onlineMeetingProvider: 'teamsForBusiness',\n    createAppointment: true\n  };\n  \n  console.log('🎯 APPOINTMENT PREP - CREATING APPOINTMENT for:', selectedSlot.formatted, 'with contact:', contact.firstName || 'Prospect');\n  return { json: appointmentData };\n} else if (slots.length > 0 && (contact.hasEmail || contact.hasPhone) && !hasTimeSelection) {\n  // SCENARIO: User has contact info, we have slots, but no specific time selected - SHOW AVAILABILITY ONLY\n  console.log('📅 APPOINTMENT PREP - SHOWING AVAILABILITY (no specific time selected yet)');\n  return { json: { \n    showAvailability: true,\n    availableSlots: slots,\n    contactInfo: contact,\n    skipAppointment: true\n  }};\n} else {\n  // SCENARIO: Don\\'t show calendar flow at all - insufficient data\n  console.log('❌ APPOINTMENT PREP - NO CALENDAR FLOW - Reasons:');\n  console.log('   - hasTimeSelection:', hasTimeSelection);\n  console.log('   - slots.length > 0:', slots.length > 0);\n  console.log('   - hasEmail || hasPhone:', (contact.hasEmail || contact.hasPhone));\n  return { json: { \n    skipAppointment: true, \n    skipCalendar: true,\n    debugInfo: { hasTimeSelection, slotsCount: slots.length, hasContact: (contact.hasEmail || contact.hasPhone), matchedPatterns, userMessage } \n  }};\n}"
+      },
+      "id": "df6ff851-2233-4d5d-8de7-2497f5b6f7b2",
+      "name": "Prepare Appointment Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        -432
+      ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.vapi.ai/call",
+        "url": "https://graph.microsoft.com/v1.0/me/events",
         "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "httpHeaderAuth",
+        "nodeCredentialType": "microsoftGraphSecurityOAuth2Api",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ {\n  phoneNumberId: 'aa785a4a-455b-4e2a-9497-df42b1d799ef',\n  customer: {\n    number: ($node['Extract Contact Details'].json.phone && $node['Extract Contact Details'].json.phone.startsWith('+')) \n      ? $node['Extract Contact Details'].json.phone.trim() \n      : '+1' + ($node['Extract Contact Details'].json.phone || '5551234567').replace(/[^0-9]/g, ''),\n    name: String((($node['Extract Contact Details'].json.firstName || 'Chat') + ' ' + ($node['Extract Contact Details'].json.lastName || 'Lead')).trim()).substring(0, 35),\n    email: $node['Extract Contact Details'].json.email || 'chatbot-lead@webchat.visitor'\n  },\n  assistantId: '2b22c86f-99d7-4922-84f6-332f95998403',\n  assistantOverrides: {\n    variableValues: {\n      customerName: String((($node['Extract Contact Details'].json.firstName || 'Chat') + ' ' + ($node['Extract Contact Details'].json.lastName || 'Lead')).trim()).substring(0, 35),\n      companyName: 'Chat Lead Company',\n      industry: 'Unknown',\n      inquiryMessage: $node['Extract Message Data'].json.message || '',\n      callReason: 'Lead qualification follow-up from website chat',\n      urgency: $node['Process Intent Classification'].json.urgency_level || 'normal',\n      sourcePage: $node['Extract Message Data'].json.url || ''\n    }\n  },\n  name: ('Chatbot Lead Call - ' + ($node['Extract Message Data'].json.sessionId || 'unknown')).substring(0, 40)\n} }}",
+        "jsonBody": "={{$json}}",
         "options": {}
       },
-      "id": "85840430-8ba0-4650-9092-8ea96a502a0d",
-      "name": "Trigger VAPI Call",
+      "id": "6c4a2b93-253d-4376-8e88-563846239dfc",
+      "name": "Create Calendar Appointment",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        800,
-        448
+        368,
+        -320
       ],
       "credentials": {
-        "httpHeaderAuth": {
-          "id": "lixCSfAw9WeDYzuc",
-          "name": "Header Auth account"
+        "microsoftGraphSecurityOAuth2Api": {
+          "id": "ciNFD0OJwVOtniqA",
+          "name": "Microsoft Graph Security account"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "// Function to safely get value with fallback\nfunction safeGet(obj, path, defaultValue) {\n  try {\n    const keys = path.split('.');\n    let result = obj;\n    for (const key of keys) {\n      result = result?.[key];\n      if (result === undefined || result === null) {\n        return defaultValue;\n      }\n    }\n    return result;\n  } catch (e) {\n    return defaultValue;\n  }\n}\n\n// Safely extract all values\nconst prepareNode = $node['Prepare Standard Response'];\nconst extractNode = $node['Extract Message Data'];\n\nconst aiResponse = safeGet(prepareNode, 'json.ai_response', 'Sorry, I encountered an issue generating a response.');\nconst sessionId = safeGet(extractNode, 'json.sessionId', 'unknown');\nconst messageCount = parseInt(safeGet(extractNode, 'json.messageCount', '1')) || 1;\n\n// Build response object with guaranteed string/number types\nconst responseData = {\n  response: String(aiResponse).trim() || 'Response unavailable',\n  sessionId: String(sessionId).trim() || 'unknown',\n  timestamp: new Date().toISOString(),\n  status: 'success',\n  isLead: false,\n  messageCount: messageCount,\n  conversationContext: 'maintained_jsonbin',\n  quickActions: [\n    {\n      text: '📅 Schedule Demo',\n      message: 'I\\'d like to schedule a demo'\n    },\n    {\n      text: '🤖 AI Solutions',\n      message: 'Tell me about your AI solutions'\n    },\n    {\n      text: '💰 Pricing Info',\n      message: 'I need help with pricing'\n    },\n    {\n      text: '📞 Request Call',\n      message: 'Can someone call me?'\n    }\n  ]\n};\n\n// Double-check all values are valid\nif (!responseData.response || responseData.response === 'undefined') {\n  responseData.response = 'Sorry, I encountered an issue generating a response.';\n}\nif (!responseData.sessionId || responseData.sessionId === 'undefined') {\n  responseData.sessionId = 'unknown';\n}\n\n// Return clean JSON object\nreturn { json: responseData };"
+        "jsCode": "// Smart response handler - handles both simple responses and full lead processing\nconst sessionId = $node['Extract Message Data'].json.sessionId || 'unknown';\nconst classification = $node['Process Intent Classification'].json;\nconst aiResponse = $node['Generate Unified Response'].json.choices[0].message.content;\n\n// Check if we have processed calendar availability\nlet calendarData = null;\nlet availableSlots = [];\nlet hasCalendarData = false;\n\ntry {\n  calendarData = $node['Process Available Times']?.json;\n  if (calendarData) {\n    availableSlots = calendarData.availableSlots || [];\n    hasCalendarData = calendarData.hasAvailability || false;\n  }\n} catch (e) {\n  // No calendar data available\n}\n\n// Check if we have contact information\nlet contactInfo = null;\nlet contactProcessed = false;\n\ntry {\n  contactInfo = $node['Extract Contact Details']?.json;\n  if (contactInfo) {\n    contactProcessed = contactInfo.hasEmail || contactInfo.hasPhone || contactInfo.hasName;\n  }\n} catch (e) {\n  // No contact data available - use fallback from unified processing\n  try {\n    const unifiedData = $node['Process Contact & Respond']?.json;\n    if (unifiedData?.contactInfo) {\n      contactInfo = unifiedData.contactInfo;\n      contactProcessed = unifiedData.contactProcessed;\n    }\n  } catch (e2) {\n    // No contact data at all\n  }\n}\n\n// Determine lead status\nconst isLead = ((classification.primary_intent === 'demo_request' || \n               classification.primary_intent === 'contact_provided' || \n               classification.primary_intent === 'pricing_inquiry') &&\n               (classification.lead_quality === 'hot' || classification.lead_quality === 'warm')) || \n               contactProcessed;\n\n// Generate appropriate quick actions\nlet quickActions = [];\n\nif (hasCalendarData && availableSlots.length > 0) {\n  // Calendar availability found - show time slot options\n  quickActions = [\n    { text: '📅 ' + (availableSlots[0]?.formatted || 'Option 1'), message: 'I\\'ll take the first available time slot' },\n    { text: '📅 ' + (availableSlots[1]?.formatted || 'Option 2'), message: 'The second time slot works better' },\n    { text: '📅 ' + (availableSlots[2]?.formatted || 'Option 3'), message: 'I prefer the third time slot' },\n    { text: '🔄 Different Times', message: 'Do you have any different times available?' }\n  ];\n} else if (contactProcessed) {\n  // Contact info processed - show scheduling options\n  quickActions = [\n    { text: '📅 Schedule Now', message: 'Let\\'s schedule the demo for this week' },\n    { text: '📞 Call Me', message: 'Please have someone call me' },\n    { text: '💬 More Questions', message: 'I have a few more questions first' }\n  ];\n} else if (isLead) {\n  // Lead intent but no contact info - ask for details\n  quickActions = [\n    { text: '✅ Share Contact', message: 'My name is John Smith, email john@company.com, phone 555-123-4567' },\n    { text: '📅 Schedule Demo', message: 'I\\'d like to schedule a demo this week' },\n    { text: '💰 Pricing Info', message: 'What does this cost?' }\n  ];\n} else {\n  // General conversation\n  quickActions = [\n    { text: '📅 Schedule Demo', message: 'I\\'d like to schedule a demo' },\n    { text: '🤖 AI Solutions', message: 'Tell me about your AI solutions' },\n    { text: '💰 Pricing Info', message: 'What does this cost?' },\n    { text: '📞 Request Call', message: 'Can someone call me?' }\n  ];\n}\n\n// Check if appointment was created and update response accordingly\nlet appointmentCreated = false;\nlet appointmentDetails = null;\ntry {\n  const appointmentData = $node['Create Calendar Appointment']?.json;\n  if (appointmentData && appointmentData.id) {\n    appointmentCreated = true;\n    appointmentDetails = {\n      id: appointmentData.id,\n      subject: appointmentData.subject,\n      startTime: appointmentData.start?.dateTime,\n      webLink: appointmentData.webLink\n    };\n  }\n} catch (e) {\n  // No appointment created\n}\n\n// Use calendar response if available, otherwise use AI response\nlet finalResponse = aiResponse;\nif (appointmentCreated && appointmentDetails) {\n  const appointmentTime = new Date(appointmentDetails.startTime).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' });\n  finalResponse = `Perfect! I\\'ve scheduled your AI Automation demo for ${appointmentTime}. You\\'ll receive a calendar invitation with the meeting link shortly. Looking forward to showing you how our system can save your business $58K+ annually!`;\n} else if (hasCalendarData && calendarData.responseText) {\n  finalResponse = calendarData.responseText;\n}\n\n// Build comprehensive response\nreturn {\n  json: {\n    response: finalResponse,\n    sessionId: sessionId,\n    timestamp: new Date().toISOString(),\n    status: 'success',\n    isLead: isLead,\n    contactProcessed: contactProcessed,\n    calendarProcessed: hasCalendarData,\n    contactInfo: contactInfo,\n    availableSlots: availableSlots,\n    classification: {\n      intent: classification.primary_intent || 'unknown',\n      quality: classification.lead_quality || 'unknown',\n      confidence: classification.confidence_score || 0\n    },\n    quickActions: quickActions,\n    conversationContext: 'unified_processing',\n    debugInfo: {\n      hasCalendarData: hasCalendarData,\n      contactProcessed: contactProcessed,\n      availableSlots: availableSlots.length,\n      processingPath: hasCalendarData ? 'FULL_LEAD_PROCESSING' : contactProcessed ? 'CONTACT_EXTRACTED' : 'SIMPLE_RESPONSE'\n    }\n  }\n};"
       },
-      "id": "2d1ee8e9-e4d9-48c4-b685-ce9c78fc55f5",
-      "name": "Build Standard Response JSON",
+      "id": "69310ce7-2eca-4f18-8886-d108a8635d00",
+      "name": "Build Final Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        976,
-        80
+        464,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const sessionId = $node['Extract Message Data'].json.sessionId || 'unknown'; const userId = $node['Extract Message Data'].json.userId || 'anonymous'; const userMessage = $node['Extract Message Data'].json.message || ''; const aiResponse = $node['Build Final Response'].json.response || 'No response generated'; const classification = $node['Process Intent Classification'].json || {}; const existingCount = $node['Extract Conversation Data'].json.totalMessages || 0; const userMessageOrder = existingCount + 1; const aiMessageOrder = existingCount + 2; let leadInfo = null; try { const contactData = $node['Process Contact & Respond'].json.contactInfo; if (contactData && (contactData.hasEmail || contactData.hasPhone || contactData.hasName)) { leadInfo = { hasEmail: contactData.hasEmail, hasPhone: contactData.hasPhone, hasName: contactData.hasName, email: contactData.email, phone: contactData.phone, firstName: contactData.firstName, lastName: contactData.lastName, isLead: true }; } } catch (e) {} const airtablePayload = { records: [{ fields: { sessionId: sessionId, messageOrder: userMessageOrder, role: 'user', content: userMessage, timestamp: $node['Extract Message Data'].json.timestamp || new Date().toISOString(), userId: userId, metadata: JSON.stringify({ url: $node['Extract Message Data'].json.url || 'unknown', userAgent: $node['Extract Message Data'].json.userAgent || 'unknown', leadInfo: leadInfo }) }}, { fields: { sessionId: sessionId, messageOrder: aiMessageOrder, role: 'assistant', content: aiResponse, timestamp: new Date().toISOString(), userId: userId, metadata: JSON.stringify({ intentClassification: { primaryIntent: classification.primary_intent || 'unknown', leadQuality: classification.lead_quality || 'unknown', urgencyLevel: classification.urgency_level || 'unknown', confidenceScore: classification.confidence_score || 0 }, leadInfo: leadInfo }) }}] }; return { json: airtablePayload };"
+      },
+      "id": "6a758cea-9b53-4f5d-8267-0f3b043782e4",
+      "name": "Save Lead Conversation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.airtable.com/v0/appv2GNhMPW2m9uBJ/Conversation%20Messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "0c36625d-c7fb-48a9-9c91-f43e27137fb6",
+      "name": "Airtable Save Lead Messages",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        816,
+        128
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "8Wi1V5ujYiar0K2r",
+          "name": "Airtable Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Rebuild the response structure from Build Final Response data\nconst originalResponse = $node['Build Final Response'].json;\n\n// Return the original response structure\nreturn {\n  json: originalResponse\n};"
+      },
+      "id": "20633f32-6e9c-4599-a571-e7502881d6cb",
+      "name": "Rebuild Response for Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        992,
+        128
       ]
     },
     {
@@ -563,69 +378,13 @@
         "responseBody": "={{$json}}",
         "options": {}
       },
-      "id": "7da24b47-e925-4850-a16e-7b5e5f6ea692",
-      "name": "Send Standard Response",
+      "id": "ef7b13c7-4dde-4181-91a9-bcf3864141e6",
+      "name": "Send Unified Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        1104,
-        80
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "// Function to safely get value with fallback\nfunction safeGet(obj, path, defaultValue) {\n  try {\n    const keys = path.split('.');\n    let result = obj;\n    for (const key of keys) {\n      result = result?.[key];\n      if (result === undefined || result === null) {\n        return defaultValue;\n      }\n    }\n    return result;\n  } catch (e) {\n    return defaultValue;\n  }\n}\n\n// Safely extract all values - handle multiple possible execution paths\nconst extractNode = $node['Extract Message Data'];\n\n// Try to get AI response from multiple possible nodes\nlet aiResponse = 'Thank you for providing your information! I\\'ve saved your details and someone from our team will be in touch soon.';\n\n// Check if we came from Prepare Lead Response (high-intent path)\nif ($node['Prepare Lead Response']) {\n  aiResponse = safeGet($node['Prepare Lead Response'], 'json.ai_response', aiResponse);\n}\n// Check if we came from Generate Lead Response (direct lead path)\nelse if ($node['Generate Lead Response']) {\n  aiResponse = safeGet($node['Generate Lead Response'], 'json.choices.0.message.content', aiResponse);\n}\n// Check if Airtable lead was created (incomplete lead path)\nelse if ($node['Create Airtable Lead']) {\n  aiResponse = 'Thank you for your information! I\\'ve recorded your details in our system. Someone from our team will contact you shortly to discuss how we can help your business capture more leads and revenue.';\n}\n\nconst sessionId = safeGet(extractNode, 'json.sessionId', 'unknown');\nconst messageCount = parseInt(safeGet(extractNode, 'json.messageCount', '1')) || 1;\n\n// Build response object with guaranteed string/number types\nconst responseData = {\n  response: String(aiResponse).trim() || 'Response unavailable',\n  sessionId: String(sessionId).trim() || 'unknown',\n  timestamp: new Date().toISOString(),\n  status: 'success',\n  isLead: true,\n  messageCount: messageCount,\n  conversationContext: 'maintained_jsonbin',\n  contactInfoRequested: true,\n  quickActions: [\n    {\n      text: '✅ Share Contact Info',\n      message: 'Sure! My name is John Doe, email john@example.com, phone 555-123-4567'\n    },\n    {\n      text: '💬 Keep Chatting',\n      message: 'I\\'d prefer to just keep chatting for now'\n    },\n    {\n      text: '📞 Call Me Instead',\n      message: 'Can someone just call me?'\n    },\n    {\n      text: '🤖 Learn More First',\n      message: 'Tell me more about your AI solutions first'\n    }\n  ]\n};\n\n// Double-check all values are valid\nif (!responseData.response || responseData.response === 'undefined') {\n  responseData.response = 'Thank you for your interest! Someone from our team will be in touch soon.';\n}\nif (!responseData.sessionId || responseData.sessionId === 'undefined') {\n  responseData.sessionId = 'unknown';\n}\n\n// Return clean JSON object\nreturn { json: responseData };"
-      },
-      "id": "0cbefa14-e7e6-4daf-8680-820933becf42",
-      "name": "Build Lead Response JSON",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        976,
-        288
-      ]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{$json}}",
-        "options": {}
-      },
-      "id": "ab7ddc01-b99b-444e-82b0-b9b438298114",
-      "name": "Send Lead Response",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [
-        1104,
-        288
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "// Function to safely get value with fallback\nfunction safeGet(obj, path, defaultValue) {\n  try {\n    const keys = path.split('.');\n    let result = obj;\n    for (const key of keys) {\n      result = result?.[key];\n      if (result === undefined || result === null) {\n        return defaultValue;\n      }\n    }\n    return result;\n  } catch (e) {\n    return defaultValue;\n  }\n}\n\n// Safely extract all values\nconst prepareNode = $node['Prepare Lead Response'];\nconst extractNode = $node['Extract Message Data'];\nconst hubspotNode = $node['Create HubSpot Lead'];\nconst vapiNode = $node['Trigger VAPI Call'];\n\nconst aiResponse = safeGet(prepareNode, 'json.ai_response', 'Response unavailable');\nconst sessionId = safeGet(extractNode, 'json.sessionId', 'unknown');\nconst messageCount = parseInt(safeGet(extractNode, 'json.messageCount', '1')) || 1;\nconst hubspotId = safeGet(hubspotNode, 'json.id', '');\nconst vapiId = safeGet(vapiNode, 'json.id', '');\n\n// Build response with voice call confirmation\nconst fullResponse = String(aiResponse).trim() + '\\n\\n📞 **Great news!** I\\'ve initiated a call request for you. Someone from our team will call you within the next few minutes. In the meantime, feel free to continue our chat!';\n\n// Build response object with guaranteed string/number types\nconst responseData = {\n  response: fullResponse,\n  sessionId: String(sessionId).trim() || 'unknown',\n  timestamp: new Date().toISOString(),\n  status: 'success',\n  isLead: true,\n  messageCount: messageCount,\n  conversationContext: 'maintained_jsonbin',\n  hubspotContactId: String(hubspotId).trim() || '',\n  vapiCallTriggered: true,\n  vapiCallId: String(vapiId).trim() || '',\n  quickActions: [\n    {\n      text: '📧 Email me info',\n      message: 'Can you email me information while I wait?'\n    },\n    {\n      text: '⏰ When will you call?',\n      message: 'What time should I expect the call?'\n    },\n    {\n      text: '📋 Prepare me',\n      message: 'What should I prepare for the call?'\n    },\n    {\n      text: '💬 Keep chatting',\n      message: 'Let\\'s continue our conversation while I wait'\n    }\n  ]\n};\n\n// Double-check critical values\nif (!responseData.sessionId || responseData.sessionId === 'undefined') {\n  responseData.sessionId = 'unknown';\n}\n\n// Return clean JSON object\nreturn { json: responseData };"
-      },
-      "id": "c963d83a-455c-4244-a7ab-81b61139f69f",
-      "name": "Build Voice Response JSON",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        976,
-        432
-      ]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{$json}}",
-        "options": {}
-      },
-      "id": "fc08c9c2-e6d4-493f-90ed-bfbbedcac07d",
-      "name": "Send Voice Response",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [
-        1104,
-        432
+        464,
+        400
       ]
     },
     {
@@ -638,10 +397,12 @@
           },
           "conditions": [
             {
-              "leftValue": "={{ $json.hasEmail }}",
+              "id": "should-create-appointment",
+              "leftValue": "={{$json.createAppointment}}",
               "rightValue": true,
               "operator": {
-                "type": "boolean"
+                "type": "boolean",
+                "operation": "equal"
               }
             }
           ],
@@ -649,14 +410,48 @@
         },
         "options": {}
       },
-      "id": "7b7ddb6a-1758-42e1-976c-76a9448368b4",
-      "name": "Route by Email",
+      "id": "2e6b0328-6086-4244-9db3-3e9d19447f65",
+      "name": "Check Appointment Needed",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        400,
-        464
+        192,
+        -96
       ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5a2f07ea-39b3-48ab-b200-3af2bfd081ca",
+              "leftValue": "={{$json.hasEmail || $json.hasPhone || $json.hasName}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -912,
+        64
+      ],
+      "id": "571f4da9-f95b-41b8-8c67-11a2040205a9",
+      "name": "Is lead"
     }
   ],
   "pinData": {},
@@ -676,14 +471,14 @@
       "main": [
         [
           {
-            "node": "Get JSONBin Data",
+            "node": "Get Conversation History",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Get JSONBin Data": {
+    "Get Conversation History": {
       "main": [
         [
           {
@@ -720,215 +515,29 @@
       "main": [
         [
           {
-            "node": "Intelligent Routing",
+            "node": "Generate Unified Response",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Intelligent Routing": {
+    "Generate Unified Response": {
       "main": [
         [
           {
-            "node": "Generate Lead Response",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Generate Standard Response",
+            "node": "Process Contact & Respond",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Generate Standard Response": {
-      "main": [
-        [
-          {
-            "node": "Prepare Standard Response",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Generate Lead Response": {
-      "main": [
-        [
-          {
-            "node": "Prepare Lead Response",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Standard Response": {
-      "main": [
-        [
-          {
-            "node": "Build Updated Bin (Standard)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Lead Response": {
-      "main": [
-        [
-          {
-            "node": "Build Updated Bin (Lead)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build Updated Bin (Standard)": {
-      "main": [
-        [
-          {
-            "node": "Update JSONBin (Standard)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build Updated Bin (Lead)": {
-      "main": [
-        [
-          {
-            "node": "Update JSONBin (Lead)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Update JSONBin (Standard)": {
-      "main": [
-        [
-          {
-            "node": "Build Standard Response JSON",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build Standard Response JSON": {
-      "main": [
-        [
-          {
-            "node": "Send Standard Response",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Update JSONBin (Lead)": {
-      "main": [
-        [
-          {
-            "node": "Check Contact Info",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Contact Info": {
+    "Process Contact & Respond": {
       "main": [
         [
           {
             "node": "Extract Contact Details",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Check Incomplete Lead",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Incomplete Lead": {
-      "main": [
-        [
-          {
-            "node": "Extract Contact Details",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Build Lead Response JSON",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create Airtable Lead": {
-      "main": [
-        [
-          {
-            "node": "Trigger VAPI Call",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build Lead Response JSON": {
-      "main": [
-        [
-          {
-            "node": "Send Lead Response",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create HubSpot Lead": {
-      "main": [
-        [
-          {
-            "node": "Trigger VAPI Call",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Trigger VAPI Call": {
-      "main": [
-        [
-          {
-            "node": "Build Voice Response JSON",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build Voice Response JSON": {
-      "main": [
-        [
-          {
-            "node": "Send Voice Response",
             "type": "main",
             "index": 0
           }
@@ -939,25 +548,142 @@
       "main": [
         [
           {
-            "node": "Route by Email",
+            "node": "Is lead",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Route by Email": {
+    "Create Airtable Lead": {
       "main": [
         [
           {
-            "node": "Create HubSpot Lead",
+            "node": "Check Calendar Availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Calendar Availability": {
+      "main": [
+        [
+          {
+            "node": "Process Available Times",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Available Times": {
+      "main": [
+        [
+          {
+            "node": "Prepare Appointment Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Appointment Data": {
+      "main": [
+        [
+          {
+            "node": "Check Appointment Needed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Final Response": {
+      "main": [
+        [
+          {
+            "node": "Save Lead Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Lead Conversation": {
+      "main": [
+        [
+          {
+            "node": "Airtable Save Lead Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable Save Lead Messages": {
+      "main": [
+        [
+          {
+            "node": "Rebuild Response for Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rebuild Response for Output": {
+      "main": [
+        [
+          {
+            "node": "Send Unified Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Calendar Appointment": {
+      "main": [
+        [
+          {
+            "node": "Build Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Appointment Needed": {
+      "main": [
+        [
+          {
+            "node": "Create Calendar Appointment",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
+            "node": "Build Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is lead": {
+      "main": [
+        [
+          {
             "node": "Create Airtable Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Final Response",
             "type": "main",
             "index": 0
           }
@@ -969,8 +695,9 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "fd602b39-5a59-4865-a3d4-c537782b319b",
+  "versionId": "972ff6e7-8b02-467f-a252-7bae53933090",
   "meta": {
+    "templateCredsSetupCompleted": true,
     "instanceId": "99aaeba6b75257ee350bb8eb8800a228cb7b97e21f9b2e1e88ec25277f30b9a0"
   },
   "id": "rwOjlTL3dOdXh1QR",
