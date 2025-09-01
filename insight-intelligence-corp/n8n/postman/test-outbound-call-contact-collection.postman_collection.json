@@ -1,0 +1,456 @@
+{
+	"info": {
+		"_postman_id": "outbound-contact-collection-test",
+		"name": "Outbound Call Contact Collection - Test Suite",
+		"description": "Test collection for the outbound-call-contact-collection.json n8n workflow. Tests various scenarios for contact information collected from VAPI outbound calls.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "insight-intelligence"
+	},
+	"item": [
+		{
+			"name": "Complete Contact Information Tests",
+			"description": "Test scenarios with complete contact information (should route to HubSpot)",
+			"item": [
+				{
+					"name": "1. Complete Lead - High Interest",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Smith\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Smith\", \n  \"email\": \"john.smith@techcorp.com\",\n  \"phone\": \"+15551234567\",\n  \"company\": \"TechCorp Solutions\",\n  \"industry\": \"Technology\",\n  \"call_outcome\": \"interested\",\n  \"interest_level\": \"hot\",\n  \"next_steps\": \"Schedule demo for next week\",\n  \"call_duration\": \"8:45\",\n  \"vapi_call_id\": \"call_abc123def456\",\n  \"message\": \"Customer expressed strong interest in AI phone automation. Currently missing 30% of calls and looking to implement within 60 days. Budget approved for up to $5k/month.\"\n}"
+						},
+						"url": {
+							"raw": "{{n8n_base_url}}/webhook/outbound-call-contact-collection",
+							"host": [
+								"{{n8n_base_url}}"
+							],
+							"path": [
+								"webhook",
+								"outbound-call-contact-collection"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2. Medical Practice - Qualified Lead",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customer_name\": \"Dr. Sarah Johnson\",\n  \"customer_email\": \"sarah.johnson@familycare.com\",\n  \"customer_phone\": \"(555) 987-6543\",\n  \"business_name\": \"Family Care Medical Center\",\n  \"industry_type\": \"Healthcare\",\n  \"call_outcome\": \"qualified\",\n  \"interest_level\": \"warm\",\n  \"next_steps\": \"Send HIPAA compliance documentation, schedule technical demo\",\n  \"call_duration\": \"12:30\",\n  \"vapi_call_id\": \"call_med789xyz012\",\n  \"notes\": \"Practice currently missing 40% of after-hours calls. Interested in HIPAA-compliant solution. Wants to see integration with their EMR system.\"\n}"
+						},
+						"url": {
+							"raw": "{{n8n_base_url}}/webhook/outbound-call-contact-collection",
+							"host": [
+								"{{n8n_base_url}}"
+							],
+							"path": [
+								"webhook",
+								"outbound-call-contact-collection"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Real Estate - Demo Scheduled",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"full_name\": \"Mike Rodriguez\",\n  \"email_address\": \"mrodriguez@coastalrealty.net\",\n  \"phone_number\": \"555-123-9876\",\n  \"company_name\": \"Coastal Realty Group\",\n  \"business_type\": \"Real Estate\",\n  \"outcome\": \"demo_scheduled\",\n  \"lead_quality\": \"hot\",\n  \"follow_up\": \"Demo scheduled for Friday 2PM, will show lead capture and showing scheduling features\",\n  \"duration\": \"6:20\",\n  \"call_id\": \"call_real456abc789\",\n  \"call_summary\": \"Agent excited about 24/7 lead capture. Currently losing weekend and evening inquiries to competitors. Ready to move forward quickly.\"\n}"
+						},
+						"url": {
+							"raw": "{{n8n_base_url}}/webhook/outbound-call-contact-collection",
+							"host": [
+								"{{n8n_base_url}}"
+							],
+							"path": [
+								"webhook",
+								"outbound-call-contact-collection"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Incomplete Contact Information Tests", 
+			"description": "Test scenarios with incomplete contact information (should route to Airtable)",
+			"item": [
+				{
+					"name": "4. No Email - Phone Only Contact",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"David Wilson\",\n  \"phone\": \"555-555-0123\",\n  \"company\": \"Wilson's HVAC Services\",\n  \"industry\": \"Home Services\",\n  \"call_outcome\": \"interested_no_email\",\n  \"interest_level\": \"warm\",\n  \"next_steps\": \"Call back tomorrow to collect email and schedule demo\",\n  \"call_duration\": \"4:15\",\n  \"vapi_call_id\": \"call_hvac123no456\",\n  \"message\": \"Business owner interested in after-hours emergency call handling. Doesn't use email much, prefers phone contact. Will get email from office manager tomorrow.\"\n}"
+						},
+						"url": {
+							"raw": "{{n8n_base_url}}/webhook/outbound-call-contact-collection",
+							"host": [
+								"{{n8n_base_url}}"
+							],
+							"path": [
+								"webhook",
+								"outbound-call-contact-collection"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5. Invalid Email Format",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Lisa\",\n  \"lastName\": \"Chen\",\n  \"email\": \"lisa.chen.lawfirm\",\n  \"phone\": \"(555) 444-3333\",\n  \"organization\": \"Chen & Associates Law\",\n  \"sector\": \"Legal Services\",\n  \"call_outcome\": \"email_correction_needed\",\n  \"interest_level\": \"qualified\",\n  \"next_steps\": \"Follow up to get correct email address\",\n  \"call_duration\": \"7:50\",\n  \"vapi_call_id\": \"call_law789bad012\",\n  \"description\": \"Attorney interested in client intake automation. Provided incomplete email address - missing domain extension. Will follow up.\"\n}"
+						},
+						"url": {
+							"raw": "{{n8n_base_url}}/webhook/outbound-call-contact-collection",
+							"host": [
+								"{{n8n_base_url}}"
+							],
+							"path": [
+								"webhook",
+								"outbound-call-contact-collection"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6. Minimal Information - Chat Lead",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customer_name\": \"Chat Lead\",\n  \"customer_phone\": \"555-999-7777\",\n  \"call_outcome\": \"contact_partial\",\n  \"interest_level\": \"cold\",\n  \"next_steps\": \"Send follow-up information, attempt to collect full details\",\n  \"call_duration\": \"2:45\",\n  \"vapi_call_id\": \"call_min123abc456\",\n  \"notes\": \"Brief call - customer was busy but confirmed interest. Only provided phone number. Will try again later when they have more time.\"\n}"
+						},
+						"url": {
+							"raw": "{{n8n_base_url}}/webhook/outbound-call-contact-collection",
+							"host": [
+								"{{n8n_base_url}}"
+							],
+							"path": [
+								"webhook",
+								"outbound-call-contact-collection"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Edge Cases & Error Testing",
+			"description": "Test edge cases, malformed data, and error scenarios",
+			"item": [
+				{
+					"name": "7. Empty Payload",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type", 
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{n8n_base_url}}/webhook/outbound-call-contact-collection",
+							"host": [
+								"{{n8n_base_url}}"
+							],
+							"path": [
+								"webhook",
+								"outbound-call-contact-collection"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "8. Mixed Field Names",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customer_name\": \"Robert Brown\",\n  \"email\": \"rbrown@fitness-plus.com\",\n  \"phone_number\": \"+1-555-666-7890\",\n  \"organization\": \"Fitness Plus Gym\",\n  \"business_type\": \"Fitness & Wellness\",\n  \"result\": \"callback_requested\",\n  \"qualification\": \"warm\",\n  \"action_required\": \"Schedule callback for next week to discuss member management automation\",\n  \"duration\": \"5:30\",\n  \"callId\": \"call_fit987mixed123\",\n  \"inquiry\": \"Gym owner interested in automated membership inquiries and class booking. Currently uses manual system that's overwhelming staff during peak times.\"\n}"
+						},
+						"url": {
+							"raw": "{{n8n_base_url}}/webhook/outbound-call-contact-collection",
+							"host": [
+								"{{n8n_base_url}}"
+							],
+							"path": [
+								"webhook",
+								"outbound-call-contact-collection"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "9. Special Characters & Encoding",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"José María García-López\",\n  \"email\": \"jm.garcia@español-consulting.com\",\n  \"phone\": \"+34-91-555-1234\",\n  \"company\": \"Español Business Consulting, LLC\",\n  \"industry\": \"Professional Services\",\n  \"call_outcome\": \"interested\",\n  \"interest_level\": \"qualified\",\n  \"next_steps\": \"Provide Spanish language support documentation\",\n  \"call_duration\": \"9:15\",\n  \"vapi_call_id\": \"call_español789xyz012\",\n  \"message\": \"Consultant interested in multilingual AI solutions. Serves Spanish-speaking business community. Wants to see demonstration of Spanish language capabilities.\"\n}"
+						},
+						"url": {
+							"raw": "{{n8n_base_url}}/webhook/outbound-call-contact-collection",
+							"host": [
+								"{{n8n_base_url}}"
+							],
+							"path": [
+								"webhook",
+								"outbound-call-contact-collection"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "10. Long Content Test",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Dr. Elizabeth Montgomery-Richardson\",\n  \"email\": \"elizabeth.montgomery@veterinaryclinicofnorthernsuburbs.com\",\n  \"phone\": \"555-123-4567\",\n  \"company\": \"Veterinary Clinic of Northern Suburbs & Emergency Animal Hospital\",\n  \"industry\": \"Veterinary Services\",\n  \"call_outcome\": \"detailed_discussion\",\n  \"interest_level\": \"hot\",\n  \"next_steps\": \"Schedule comprehensive demo including after-hours emergency protocols, integration with veterinary management software, and staff training timeline\",\n  \"call_duration\": \"18:45\",\n  \"vapi_call_id\": \"call_vet456longcontent789\",\n  \"message\": \"Veterinary clinic with multiple locations experiencing significant challenges with after-hours emergency calls and appointment scheduling. Currently missing approximately 35% of calls during peak hours and 80% of after-hours emergencies. Staff spending 40+ hours per week on phone management instead of patient care. Interested in comprehensive AI solution that can handle emergency triage, appointment scheduling, prescription refill requests, and integration with their existing veterinary management system. Budget approved for implementation within Q1. Wants to see detailed demonstration of HIPAA-equivalent veterinary compliance features and staff training program.\"\n}"
+						},
+						"url": {
+							"raw": "{{n8n_base_url}}/webhook/outbound-call-contact-collection",
+							"host": [
+								"{{n8n_base_url}}"
+							],
+							"path": [
+								"webhook",
+								"outbound-call-contact-collection"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Success Validation Tests",
+			"description": "Tests to validate successful processing and response formats",
+			"item": [
+				{
+					"name": "11. Validate HubSpot Route Response",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains success status\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('success');",
+									"});",
+									"",
+									"pm.test(\"Response contains contact details\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.contact_details).to.be.an('object');",
+									"    pm.expect(jsonData.contact_details.name).to.exist;",
+									"    pm.expect(jsonData.contact_details.email).to.exist;",
+									"});",
+									"",
+									"pm.test(\"Response indicates HubSpot integration\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.crm_integration.primary_crm).to.eql('HubSpot');",
+									"    pm.expect(jsonData.crm_integration.hubspot_contact_id).to.exist;",
+									"});",
+									"",
+									"pm.test(\"Response contains call information\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.call_info).to.be.an('object');",
+									"    pm.expect(jsonData.call_info.outcome).to.exist;",
+									"    pm.expect(jsonData.call_info.interest_level).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\",\n  \"email\": \"test.user@example.com\",\n  \"phone\": \"555-TEST-001\",\n  \"company\": \"Test Company\",\n  \"industry\": \"Software Testing\",\n  \"call_outcome\": \"successful\",\n  \"interest_level\": \"qualified\",\n  \"next_steps\": \"Validation test completed\",\n  \"vapi_call_id\": \"test_validation_001\"\n}"
+						},
+						"url": {
+							"raw": "{{n8n_base_url}}/webhook/outbound-call-contact-collection",
+							"host": [
+								"{{n8n_base_url}}"
+							],
+							"path": [
+								"webhook",
+								"outbound-call-contact-collection"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "12. Validate Airtable Route Response",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains success status\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('success');",
+									"});",
+									"",
+									"pm.test(\"Response contains contact details without email\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.contact_details).to.be.an('object');",
+									"    pm.expect(jsonData.contact_details.name).to.exist;",
+									"});",
+									"",
+									"pm.test(\"Response indicates Airtable integration\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.crm_integration.primary_crm).to.eql('Airtable');",
+									"    pm.expect(jsonData.crm_integration.airtable_record_created).to.eql(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Test\",\n  \"lastName\": \"Incomplete\",\n  \"phone\": \"555-TEST-002\",\n  \"company\": \"Test Company No Email\",\n  \"industry\": \"Testing Services\",\n  \"call_outcome\": \"no_email_collected\",\n  \"interest_level\": \"warm\",\n  \"next_steps\": \"Follow up to collect email\",\n  \"vapi_call_id\": \"test_airtable_001\"\n}"
+						},
+						"url": {
+							"raw": "{{n8n_base_url}}/webhook/outbound-call-contact-collection",
+							"host": [
+								"{{n8n_base_url}}"
+							],
+							"path": [
+								"webhook",
+								"outbound-call-contact-collection"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "n8n_base_url",
+			"value": "https://your-n8n-instance.com",
+			"type": "string",
+			"description": "Base URL for your n8n instance webhook endpoint"
+		}
+	]
+}
