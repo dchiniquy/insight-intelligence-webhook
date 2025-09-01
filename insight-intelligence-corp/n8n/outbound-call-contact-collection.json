@@ -1,5 +1,5 @@
 {
-  "name": "outbound-call-contact-collection",
+  "name": "Outbound-call-contact-collection",
   "nodes": [
     {
       "parameters": {
@@ -8,13 +8,13 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "webhook-contact-collection",
+      "id": "07cfb718-588c-4e7a-b2f3-6b313f9c20c6",
       "name": "VAPI Contact Collection Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -240,
-        384
+        0,
+        -128
       ],
       "webhookId": "auto-generated"
     },
@@ -86,13 +86,13 @@
         },
         "options": {}
       },
-      "id": "extract-contact-data",
+      "id": "3cbe5c32-234a-46a6-9685-0a01335b8a4e",
       "name": "Extract Contact Data",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        0,
-        384
+        240,
+        -128
       ]
     },
     {
@@ -127,13 +127,13 @@
         },
         "options": {}
       },
-      "id": "validate-email",
+      "id": "75b8c92e-ebf3-47f7-8357-ac1d832ac1f1",
       "name": "Validate Email Address",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        240,
-        384
+        480,
+        -128
       ]
     },
     {
@@ -143,22 +143,20 @@
         "additionalFields": {
           "companyName": "={{$node['Extract Contact Data'].json['company'] !== 'Company collected during call' ? $node['Extract Contact Data'].json['company'] : ''}}",
           "firstName": "={{$node['Extract Contact Data'].json['firstName']}}",
-          "lastName": "={{$node['Extract Contact Data'].json['lastName']}}",
           "industry": "={{$node['Extract Contact Data'].json['industry'] !== 'Industry discussed during call' ? $node['Extract Contact Data'].json['industry'] : ''}}",
+          "lastName": "={{$node['Extract Contact Data'].json['lastName']}}",
           "message": "={{$node['Extract Contact Data'].json['message'] + ' | Call Outcome: ' + $node['Extract Contact Data'].json['call_outcome'] + ' | Interest Level: ' + $node['Extract Contact Data'].json['interest_level']}}",
-          "phoneNumber": "={{$node['Extract Contact Data'].json['phone'] !== 'Phone from VAPI call' ? $node['Extract Contact Data'].json['phone'] : ''}}",
-          "lifecycleStage": "lead",
-          "leadSource": "VAPI Outbound Call"
+          "phoneNumber": "={{$node['Extract Contact Data'].json['phone'] !== 'Phone from VAPI call' ? $node['Extract Contact Data'].json['phone'] : ''}}"
         },
         "options": {}
       },
-      "id": "create-hubspot-contact",
+      "id": "38b079a8-90c3-427b-ac6e-415846806a3d",
       "name": "Create HubSpot Contact",
       "type": "n8n-nodes-base.hubspot",
       "typeVersion": 2,
       "position": [
-        480,
-        224
+        720,
+        -288
       ],
       "credentials": {
         "hubspotOAuth2Api": {
@@ -170,26 +168,30 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.airtable.com/v0/appLYfe9ZRB4CjK1X/ChatLeads",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "airtablePersonalAccessToken",
+        "url": "https://api.airtable.com/v0/appv2GNhMPW2m9uBJ/Incomplete%20Leads",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"records\": [{\n    \"fields\": {\n      \"firstName\": \"{{$node['Extract Contact Data'].json['firstName']}}\",\n      \"lastName\": \"{{$node['Extract Contact Data'].json['lastName']}}\",\n      \"phone\": \"{{$node['Extract Contact Data'].json['phone']}}\",\n      \"message\": \"{{$node['Extract Contact Data'].json['message']}}\",\n      \"callOutcome\": \"{{$node['Extract Contact Data'].json['call_outcome']}}\",\n      \"interestLevel\": \"{{$node['Extract Contact Data'].json['interest_level']}}\",\n      \"nextSteps\": \"{{$node['Extract Contact Data'].json['next_steps']}}\",\n      \"company\": \"{{$node['Extract Contact Data'].json['company']}}\",\n      \"industry\": \"{{$node['Extract Contact Data'].json['industry']}}\",\n      \"vapiCallId\": \"{{$node['Extract Contact Data'].json['vapi_call_id']}}\",\n      \"callDuration\": \"{{$node['Extract Contact Data'].json['call_duration']}}\",\n      \"source\": \"VAPI Outbound Call\",\n      \"status\": \"contacted\",\n      \"collectionTime\": \"{{$node['Extract Contact Data'].json['collection_time']}}\"\n    }\n  }]\n}",
+        "jsonBody": "={{ {\n  records: [{\n    fields: {\n      firstName: $node['Extract Contact Data'].json['firstName'],\n      lastName: $node['Extract Contact Data'].json['lastName'],\n      phone: $node['Extract Contact Data'].json['phone'],\n      email: $node['Extract Contact Data'].json['email'],\n      message: $node['Extract Contact Data'].json['message'],\n      leadQuality: $node['Extract Contact Data'].json['interest_level'],\n      leadSource: 'Chat',\n      notes: 'Call Outcome: ' + $node['Extract Contact Data'].json['call_outcome'] + ' | Next Steps: ' + $node['Extract Contact Data'].json['next_steps'] + ' | Duration: ' + $node['Extract Contact Data'].json['call_duration'],\n      sessionId: $node['Extract Contact Data'].json['vapi_call_id'],\n      status: 'new',\n      timestamp: $node['Extract Contact Data'].json['collection_time'],\n      vapiCallId: $node['Extract Contact Data'].json['vapi_call_id'],\n      vapiCallStatus: 'ended',\n      urgencyLevel: $node['Extract Contact Data'].json['interest_level'],\n      intentClassification: $node['Extract Contact Data'].json['call_outcome']\n    }\n  }]\n} }}",
         "options": {}
       },
-      "id": "create-airtable-lead",
+      "id": "b542fc2d-3310-4e9a-b016-343ffc3a8967",
       "name": "Create Airtable Lead",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        480,
-        544
+        720,
+        32
       ],
       "credentials": {
-        "airtablePersonalAccessToken": {
-          "id": "airtable-token-id",
-          "name": "Airtable Personal Access Token"
+        "airtableTokenApi": {
+          "id": "4uGmbosme5VqqJG4",
+          "name": "Airtable Personal Access Token account"
+        },
+        "httpHeaderAuth": {
+          "id": "8Wi1V5ujYiar0K2r",
+          "name": "Airtable Auth"
         }
       }
     },
@@ -208,17 +210,18 @@
           "mode": "list",
           "cachedResultName": "Sales"
         },
-        "message": "=📋 **Contact Information Collected from VAPI Call**\n\n**Contact Details:**\n• **Name:** {{$node['Extract Contact Data'].json['firstName']}} {{$node['Extract Contact Data'].json['lastName']}}\n• **Phone:** {{$node['Extract Contact Data'].json['phone']}}\n• **Email:** {{$node['Extract Contact Data'].json['email']}}\n• **Company:** {{$node['Extract Contact Data'].json['company']}}\n• **Industry:** {{$node['Extract Contact Data'].json['industry']}}\n\n**Call Information:**\n• **VAPI Call ID:** {{$node['Extract Contact Data'].json['vapi_call_id']}}\n• **Call Outcome:** {{$node['Extract Contact Data'].json['call_outcome']}}\n• **Interest Level:** {{$node['Extract Contact Data'].json['interest_level']}}\n• **Call Duration:** {{$node['Extract Contact Data'].json['call_duration']}}\n• **Next Steps:** {{$node['Extract Contact Data'].json['next_steps']}}\n\n**CRM Integration:**\n{{#if $node['Create HubSpot Contact']}}• **HubSpot Contact ID:** {{$node['Create HubSpot Contact'].json['id']}}\n• **HubSpot URL:** [View Contact](https://app.hubspot.com/contacts/{{$node['Create HubSpot Contact'].json['portalId']}}/contact/{{$node['Create HubSpot Contact'].json['id']}})\n{{else}}• **Airtable Record:** Lead created in ChatLeads table\n{{/if}}\n\n**Call Notes:**\n{{$node['Extract Contact Data'].json['message']}}\n\n---\n*Contact information successfully collected via AI call* 🤖📞",
+        "message": "=📋 **Contact Information Collected from VAPI Call**\n\n**Contact Details:**\n• **Name:** {{ $node['Extract Contact Data'].json['firstName'] }} {{ $node['Extract Contact Data'].json['lastName'] }}\n• **Phone:** {{ $node['Extract Contact Data'].json['phone'] }}\n• **Email:** {{ $node['Extract Contact Data'].json['email'] }}\n• **Company:** {{ $node['Extract Contact Data'].json['company'] }}\n• **Industry:** {{ $node['Extract Contact Data'].json['industry'] }}\n\n**Call Information:**\n• **VAPI Call ID:** {{ $node['Extract Contact Data'].json['vapi_call_id'] }}\n• **Call Outcome:** {{ $node['Extract Contact Data'].json['call_outcome'] }}\n• **Interest Level:** {{ $node['Extract Contact Data'].json['interest_level'] }}\n• **Call Duration:** {{ $node['Extract Contact Data'].json['call_duration'] }}\n• **Next Steps:** {{ $node['Extract Contact Data'].json['next_steps'] }}\n\n**CRM Integration:**\n{{ $('Create HubSpot Contact').length > 0 ? '• **HubSpot Contact ID:** ' + $('Create HubSpot Contact').first().json['id'] + '\\n• **HubSpot URL:** [View Contact](https://app.hubspot.com/contacts/' + $('Create HubSpot Contact').first().json['portalId'] + '/contact/' + $('Create HubSpot Contact').first().json['id'] + ')' : '• **Airtable Record:** Lead created in Incomplete Leads table' }}\n\n**Call Notes:**\n{{ $node['Extract Contact Data'].json['message'] }}\n\n---\n*Contact information successfully collected via AI call* 🤖📞",
         "options": {}
       },
-      "id": "send-teams-notification",
+      "id": "6707f641-a3ba-48ea-96e8-49f6d7d56fee",
       "name": "Send Teams Notification",
       "type": "n8n-nodes-base.microsoftTeams",
       "typeVersion": 2,
       "position": [
-        720,
-        384
+        960,
+        -128
       ],
+      "webhookId": "bbb0cbcd-efdd-4061-85b6-fdf6890728de",
       "credentials": {
         "microsoftTeamsOAuth2Api": {
           "id": "6pTc2hJVUNyTyOzc",
@@ -229,31 +232,31 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"status\": \"success\",\n  \"message\": \"Contact information successfully collected and stored\",\n  \"contact_details\": {\n    \"name\": \"{{$node['Extract Contact Data'].json['firstName']}} {{$node['Extract Contact Data'].json['lastName']}}\",\n    \"email\": \"{{$node['Extract Contact Data'].json['email']}}\",\n    \"phone\": \"{{$node['Extract Contact Data'].json['phone']}}\",\n    \"company\": \"{{$node['Extract Contact Data'].json['company']}}\"\n  },\n  \"call_info\": {\n    \"outcome\": \"{{$node['Extract Contact Data'].json['call_outcome']}}\",\n    \"interest_level\": \"{{$node['Extract Contact Data'].json['interest_level']}}\",\n    \"next_steps\": \"{{$node['Extract Contact Data'].json['next_steps']}}\",\n    \"vapi_call_id\": \"{{$node['Extract Contact Data'].json['vapi_call_id']}}\"\n  },\n  \"crm_integration\": {\n    {{#if $node['Create HubSpot Contact']}}\n    \"hubspot_contact_id\": \"{{$node['Create HubSpot Contact'].json['id']}}\",\n    \"primary_crm\": \"HubSpot\"\n    {{else}}\n    \"airtable_record_created\": true,\n    \"primary_crm\": \"Airtable\"\n    {{/if}}\n  },\n  \"collection_time\": \"{{$node['Extract Contact Data'].json['collection_time']}}\"\n}",
+        "responseBody": "={{ {\n  status: 'success',\n  message: 'Contact information successfully collected and stored',\n  contact_details: {\n    name: $node['Extract Contact Data'].json['firstName'] + ' ' + $node['Extract Contact Data'].json['lastName'],\n    email: $node['Extract Contact Data'].json['email'],\n    phone: $node['Extract Contact Data'].json['phone'],\n    company: $node['Extract Contact Data'].json['company']\n  },\n  call_info: {\n    outcome: $node['Extract Contact Data'].json['call_outcome'],\n    interest_level: $node['Extract Contact Data'].json['interest_level'],\n    next_steps: $node['Extract Contact Data'].json['next_steps'],\n    vapi_call_id: $node['Extract Contact Data'].json['vapi_call_id']\n  },\n  crm_integration: $('Create HubSpot Contact').length > 0 ? {\n    hubspot_contact_id: $('Create HubSpot Contact').first().json['id'],\n    primary_crm: 'HubSpot'\n  } : {\n    airtable_record_created: true,\n    primary_crm: 'Airtable'\n  },\n  collection_time: $node['Extract Contact Data'].json['collection_time']\n} }}",
         "options": {}
       },
-      "id": "respond-success",
+      "id": "49c7485f-9a55-4dd9-a300-edab5759cca9",
       "name": "Respond Success",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        960,
-        384
+        1200,
+        -128
       ]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"status\": \"error\",\n  \"message\": \"Contact information could not be processed - missing valid email address\",\n  \"error\": \"Email validation failed\",\n  \"received_data\": {\n    \"name\": \"{{$node['Extract Contact Data'].json['firstName']}} {{$node['Extract Contact Data'].json['lastName']}}\",\n    \"phone\": \"{{$node['Extract Contact Data'].json['phone']}}\",\n    \"email_received\": \"{{$node['Extract Contact Data'].json['email']}}\"\n  },\n  \"suggestion\": \"Please ensure a valid email address was collected during the call\"\n}",
+        "responseBody": "={{ {\n  status: 'error',\n  message: 'Contact information could not be processed - missing valid email address',\n  error: 'Email validation failed',\n  received_data: {\n    name: $node['Extract Contact Data'].json['firstName'] + ' ' + $node['Extract Contact Data'].json['lastName'],\n    phone: $node['Extract Contact Data'].json['phone'],\n    email_received: $node['Extract Contact Data'].json['email']\n  },\n  suggestion: 'Please ensure a valid email address was collected during the call'\n} }}",
         "options": {}
       },
-      "id": "respond-error-email",
+      "id": "41e9159e-1884-44c8-81a0-cd944bd6909f",
       "name": "Respond Error - Invalid Email",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        480,
-        736
+        720,
+        224
       ]
     }
   ],
@@ -337,11 +340,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "contact-collection-v1",
+  "versionId": "a8052374-bda7-42ea-9c49-7edaa2849081",
   "meta": {
-    "templateCredsSetupCompleted": true,
     "instanceId": "99aaeba6b75257ee350bb8eb8800a228cb7b97e21f9b2e1e88ec25277f30b9a0"
   },
-  "id": "outbound-contact-collection-workflow",
+  "id": "CowKWvbbVszvh74S",
   "tags": []
 }
