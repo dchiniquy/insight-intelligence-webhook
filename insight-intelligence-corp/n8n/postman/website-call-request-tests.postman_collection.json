@@ -1,0 +1,522 @@
+{
+  "info": {
+    "name": "Insight Intelligence - Website Call Request Tests",
+    "description": "Test collection for website call request workflow - simple name + phone validation and VAPI call initiation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Valid Call Request - Standard Format",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"John Smith\",\n  \"phone\": \"(555) 123-4567\",\n  \"source\": \"pricing-page\",\n  \"urgency\": \"normal\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-call-request"
+          ]
+        },
+        "description": "Test with standard format - name and phone with parentheses and dashes"
+      },
+      "response": []
+    },
+    {
+      "name": "Valid Call Request - Alternative Field Names",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"full_name\": \"Sarah Martinez\",\n  \"phone_number\": \"555-987-6543\",\n  \"page\": \"/solutions\",\n  \"priority\": \"high\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-call-request"
+          ]
+        },
+        "description": "Test with alternative field names that the workflow should handle"
+      },
+      "response": []
+    },
+    {
+      "name": "Valid Call Request - FirstName + LastName",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"Michael\",\n  \"lastName\": \"Johnson\",\n  \"phoneNumber\": \"5551234567\",\n  \"source\": \"homepage\",\n  \"urgency\": \"normal\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-call-request"
+          ]
+        },
+        "description": "Test with firstName/lastName combination and unformatted phone number"
+      },
+      "response": []
+    },
+    {
+      "name": "Valid Call Request - International Phone",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Alex Wilson\",\n  \"phone\": \"+1-503-468-8103\",\n  \"source\": \"contact-page\",\n  \"urgency\": \"high\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-call-request"
+          ]
+        },
+        "description": "Test with international format phone number (already includes country code)"
+      },
+      "response": []
+    },
+    {
+      "name": "Valid Call Request - Minimal Data",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Lisa Chen\",\n  \"phone\": \"555.789.0123\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-call-request"
+          ]
+        },
+        "description": "Test with only required fields - name and phone (dots format)"
+      },
+      "response": []
+    },
+    {
+      "name": "Invalid Request - Missing Name",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"555-123-4567\",\n  \"source\": \"pricing-page\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-call-request"
+          ]
+        },
+        "description": "Test validation failure - missing name field"
+      },
+      "response": []
+    },
+    {
+      "name": "Invalid Request - Empty Name",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"\",\n  \"phone\": \"555-123-4567\",\n  \"source\": \"contact-page\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-call-request"
+          ]
+        },
+        "description": "Test validation failure - empty name string"
+      },
+      "response": []
+    },
+    {
+      "name": "Invalid Request - Single Character Name",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"J\",\n  \"phone\": \"555-123-4567\",\n  \"source\": \"homepage\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-call-request"
+          ]
+        },
+        "description": "Test validation failure - name too short (less than 2 characters)"
+      },
+      "response": []
+    },
+    {
+      "name": "Invalid Request - Missing Phone",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Jennifer Davis\",\n  \"source\": \"solutions-page\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-call-request"
+          ]
+        },
+        "description": "Test validation failure - missing phone number"
+      },
+      "response": []
+    },
+    {
+      "name": "Invalid Request - Empty Phone",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Robert Taylor\",\n  \"phone\": \"\",\n  \"source\": \"pricing-page\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-call-request"
+          ]
+        },
+        "description": "Test validation failure - empty phone string"
+      },
+      "response": []
+    },
+    {
+      "name": "Invalid Request - Phone Too Short",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"David Brown\",\n  \"phone\": \"555-123\",\n  \"source\": \"contact-page\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-call-request"
+          ]
+        },
+        "description": "Test validation failure - phone number too short (less than 10 digits)"
+      },
+      "response": []
+    },
+    {
+      "name": "Invalid Request - Phone Invalid Format",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Amanda Miller\",\n  \"phone\": \"abc-def-ghij\",\n  \"source\": \"homepage\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-call-request"
+          ]
+        },
+        "description": "Test validation failure - phone with letters instead of numbers"
+      },
+      "response": []
+    },
+    {
+      "name": "Edge Case - Very Long Name",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Christopher Alexander Montgomery Washington Jefferson Adams\",\n  \"phone\": \"555-123-4567\",\n  \"source\": \"solutions-page\",\n  \"urgency\": \"normal\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-call-request"
+          ]
+        },
+        "description": "Test edge case - very long name that should be truncated to 35 characters"
+      },
+      "response": []
+    },
+    {
+      "name": "Edge Case - Special Characters in Name",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"José María O'Connor-Smith\",\n  \"phone\": \"555-987-6543\",\n  \"source\": \"contact-page\",\n  \"urgency\": \"high\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-call-request"
+          ]
+        },
+        "description": "Test edge case - name with special characters (accents, apostrophe, hyphen)"
+      },
+      "response": []
+    },
+    {
+      "name": "Edge Case - Whitespace in Name",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"  Emma   Watson  \",\n  \"phone\": \"555-456-7890\",\n  \"source\": \"pricing-page\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/webhook/website-call-request",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhook",
+            "website-call-request"
+          ]
+        },
+        "description": "Test edge case - name with leading/trailing/extra whitespace that should be trimmed"
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set base URL if not already set",
+          "if (!pm.collectionVariables.get('base_url')) {",
+          "    pm.collectionVariables.set('base_url', 'https://your-n8n-instance.com');",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Log response for debugging",
+          "console.log('Response Status:', pm.response.code);",
+          "console.log('Response Body:', pm.response.text());",
+          "",
+          "// Parse response",
+          "let response;",
+          "try {",
+          "    response = pm.response.json();",
+          "} catch (e) {",
+          "    console.log('Could not parse JSON response');",
+          "    return;",
+          "}",
+          "",
+          "// Test based on request name",
+          "const requestName = pm.info.requestName;",
+          "",
+          "if (requestName.includes('Invalid Request')) {",
+          "    // Test error responses",
+          "    pm.test('Should return error status', function () {",
+          "        pm.expect(response.status).to.equal('error');",
+          "    });",
+          "    ",
+          "    pm.test('Should have error message', function () {",
+          "        pm.expect(response.message).to.be.a('string');",
+          "        pm.expect(response.message.length).to.be.greaterThan(0);",
+          "    });",
+          "    ",
+          "    pm.test('Should have error field', function () {",
+          "        pm.expect(response.error).to.exist;",
+          "    });",
+          "} else if (requestName.includes('Valid Call Request') || requestName.includes('Edge Case')) {",
+          "    // Test successful responses",
+          "    pm.test('Should return success status', function () {",
+          "        pm.expect(response.status).to.equal('success');",
+          "    });",
+          "    ",
+          "    pm.test('Should confirm call initiated', function () {",
+          "        pm.expect(response.call_initiated).to.equal(true);",
+          "    });",
+          "    ",
+          "    pm.test('Should have VAPI call ID', function () {",
+          "        pm.expect(response.vapi_call_id).to.exist;",
+          "        pm.expect(response.vapi_call_id).to.be.a('string');",
+          "    });",
+          "    ",
+          "    pm.test('Should have success message with name', function () {",
+          "        pm.expect(response.message).to.be.a('string');",
+          "        pm.expect(response.message).to.include('Thank you');",
+          "        pm.expect(response.message).to.include('call you');",
+          "    });",
+          "    ",
+          "    pm.test('Should have estimated call time', function () {",
+          "        pm.expect(response.estimated_call_time).to.equal('Within 5 minutes');",
+          "    });",
+          "    ",
+          "    pm.test('Should have submission timestamp', function () {",
+          "        pm.expect(response.submission_time).to.exist;",
+          "    });",
+          "}",
+          "",
+          "// Response time test (for all requests)",
+          "pm.test('Response time should be reasonable', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000); // 5 seconds",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://your-n8n-instance.com",
+      "type": "string"
+    }
+  ]
+}
