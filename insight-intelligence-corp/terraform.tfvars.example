@@ -27,32 +27,26 @@ phone_routing_enabled = true
 phone_routing_map = jsonencode({
   # Main business line - goes directly to VAPI (no forwarding)
   "+14805767537" = {
-    vapiAssistantId = "2b22c86f-99d7-4922-84f6-332f95998403"
+    vapiAssistantId = "498fa201-d561-4401-9f84-bfbccdf79b65"
     description = "Main business line → Direct to VAPI"
   }
   
-  # Owner's personal line - forwards to mobile first, then VAPI on no answer
-  "+15551234567" = {
+  # Don's personal line - forwards to mobile first, then VAPI on no answer
+  "+16029609874" = {
     targetNumber = "+15034688103"
     requiresAnswer = true
-    maxRingTime = 30000
-    vapiAssistantId = "2b22c86f-99d7-4922-84f6-332f95998403"
-    description = "Owner direct line → Mobile then VAPI"
+    maxRingTime = 22000
+    vapiAssistantId = "7198cd49-dfc0-4616-b5bc-3ed4b7fa42a1"
+    description = "Don direct line → Mobile then VAPI"
   }
   
-  # Support line - forwards to office number, then VAPI
-  "+15559876543" = {
-    targetNumber = "+19876543210" 
+  # Demie's personal line - forwards to cell, then VAPI
+  "+16026000707" = {
+    targetNumber = "+14586002713" 
     requiresAnswer = true
-    maxRingTime = 25000
+    maxRingTime = 22000
     vapiAssistantId = "support-assistant-id"
-    description = "Support line → Office then VAPI"
-  }
-  
-  # Sales line - direct to specialized sales VAPI assistant
-  "+15557891234" = {
-    vapiAssistantId = "sales-assistant-id"
-    description = "Sales line → Direct to Sales VAPI"
+    description = "Demie line → Office then VAPI"
   }
 })
 
