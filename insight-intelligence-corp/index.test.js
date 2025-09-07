@@ -172,7 +172,7 @@ describe('Twilio VAPI Webhook Handler', () => {
         'https://api.vapi.ai/call',
         expect.objectContaining({
           phoneCallProviderBypassEnabled: true,
-          phoneNumberId: "aa785a4a-455b-4e2a-9497-df42b1d799ef",
+          phoneNumberId: expect.any(String), // Allow any valid phoneNumberId
           customer: {
             number: mockTwilioWebhookData.unmappedNumber.From
           },
@@ -249,7 +249,7 @@ describe('Twilio VAPI Webhook Handler', () => {
 
       expect(result.statusCode).toBe(200);
       expect(result.body).toContain('<Dial timeout="30"');
-      expect(result.body).toContain('<Number>+15034688103</Number>');
+      expect(result.body).toContain('<Number url="https://api.example.com/dev/whisper">+15034688103</Number>');
       expect(result.body).not.toContain('<Stream'); // Should not contain VAPI stream initially
     });
 

@@ -30,6 +30,10 @@ exports.handler = async (event) => {
         const params = new URLSearchParams(body);
         const twilioData = Object.fromEntries(params);
         
+        // Check if this is a whisper endpoint request
+        if (event.requestContext.path && event.requestContext.path.endsWith('/whisper')) {
+            return generateWhisperResponse(twilioData);
+        }
         
         // Process different Twilio webhook types
         const response = await processTwilioWebhook(twilioData, event);
@@ -217,6 +221,46 @@ function getRoutingConfig(incomingNumber) {
 }
 
 /**
+ * Find routing configuration by target number (reverse lookup)
+ * Used for whisper calls where we have the mobile number, not the business number
+ * 
+ * @param {string} targetNumber - The mobile/target number to find routing config for
+ * @returns {Object|null} - Routing configuration object or null
+ */
+function findRoutingConfigByTarget(targetNumber) {
+    const routingEnabled = process.env.PHONE_ROUTING_ENABLED === 'true';
+    if (!routingEnabled) {
+        console.log('Phone routing disabled - no routing config available for whisper');
+        return null;
+    }
+
+    const routingMapString = process.env.PHONE_ROUTING_MAP || '{}';
+    let routingMap;
+    
+    try {
+        routingMap = JSON.parse(routingMapString);
+    } catch (error) {
+        console.error('Error parsing PHONE_ROUTING_MAP for whisper:', error);
+        return null;
+    }
+
+    // Search through all routing configs to find one with matching targetNumber
+    for (const [businessNumber, config] of Object.entries(routingMap)) {
+        if (config.targetNumber === targetNumber) {
+            console.log(`Found routing config for target ${targetNumber}: business number ${businessNumber}`);
+            // Include the whisperMessage in the returned config
+            return {
+                ...config,
+                businessNumber: businessNumber
+            };
+        }
+    }
+    
+    console.log(`No routing configuration found for target number ${targetNumber}`);
+    return null;
+}
+
+/**
  * Generate TwiML to forward call to target number with timeout
  * 
  * @param {Object} twilioData - Twilio webhook data
@@ -224,7 +268,7 @@ function getRoutingConfig(incomingNumber) {
  * @param {string} webhookUrl - Base webhook URL for status callbacks
  * @returns {string} - TwiML response
  */
-function forwardCall(twilioData, routingConfig, webhookUrl) {
+function forwardCall(twilioData, routingConfig, webhookUrl, baseUrl) {
     const { CallSid } = twilioData;
     const timeoutSeconds = Math.floor(routingConfig.maxRingTime / 1000);
 
@@ -238,10 +282,13 @@ function forwardCall(twilioData, routingConfig, webhookUrl) {
 
     console.log(`Forwarding call ${CallSid} to ${routingConfig.targetNumber} with ${timeoutSeconds}s timeout`);
 
+    const whisperUrl = `${baseUrl}/dev/whisper`;
+    console.log(`Whisper URL: ${whisperUrl}`);
+    
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Dial timeout="${timeoutSeconds}" action="${webhookUrl}" method="POST" callerId="${twilioData.From}">
-        <Number>${routingConfig.targetNumber}</Number>
+        <Number url="${whisperUrl}">${routingConfig.targetNumber}</Number>
     </Dial>
     <Say voice="alice">I'm sorry, but no one is available to take your call right now. Please hold while I connect you to our AI assistant who can help you.</Say>
 </Response>`;
@@ -334,9 +381,10 @@ async function handleIncomingCall(data, event) {
         
         if (routingConfig && routingConfig.targetNumber) {
             // Forward call to target number
-            const webhookUrl = `https://${event.requestContext.domainName}${event.requestContext.path}`;
+            const baseUrl = `https://${event.requestContext.domainName}`;
+            const webhookUrl = `${baseUrl}${event.requestContext.path}`;
             console.log(`Using routing config - forwarding to ${routingConfig.targetNumber}`);
-            return forwardCall(data, routingConfig, webhookUrl);
+            return forwardCall(data, routingConfig, webhookUrl, baseUrl);
         } else if (routingConfig) {
             // Routing config exists but no targetNumber - direct to VAPI with specific assistant
             console.log(`Using routing config - direct to VAPI with assistant ${routingConfig.vapiAssistantId}`);
@@ -459,4 +507,47 @@ function generateTwiMLResponse(content) {
 <Response>
     ${content}
 </Response>`;
+}
+
+/**
+ * Generate whisper response for call screening
+ * 
+ * @param {Object} twilioData - Twilio webhook data
+ * @param {Object} event - Lambda event object
+ * @returns {Object} - HTTP response with TwiML
+ */
+function generateWhisperResponse(twilioData) {
+    const { From, To } = twilioData;
+    
+    // For whisper calls, To is the mobile number, not the business number
+    // We need to find which business number forwards to this mobile number
+    const routingConfig = findRoutingConfigByTarget(To);
+    
+    let whisperMessage = `Call from ${From}`;
+    
+    if (routingConfig && routingConfig.whisperMessage) {
+        whisperMessage = routingConfig.whisperMessage;
+    } else if (routingConfig && routingConfig.description) {
+        whisperMessage = `${routingConfig.description}: Call from ${From}`;
+    } else {
+        whisperMessage = `Business call forwarded from ${To} - caller ${From}`;
+    }
+    
+    console.log(`Generating whisper for ${To}: "${whisperMessage}"`);
+    console.log(`Routing config found:`, JSON.stringify(routingConfig, null, 2));
+    
+    const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say voice="alice">${whisperMessage}</Say>
+</Response>`;
+    
+    console.log(`Whisper TwiML:`, twiml);
+    
+    return {
+        statusCode: 200,
+        headers: {
+            'Content-Type': 'application/xml'
+        },
+        body: twiml
+    };
 }
