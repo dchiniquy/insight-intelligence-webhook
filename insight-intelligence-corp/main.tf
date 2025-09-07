@@ -43,15 +43,19 @@ data "archive_file" "lambda_zip" {
 module "twilio_vapi_webhook" {
   source = "../terraform/modules/twilio-vapi-webhook"
 
-  project_name        = var.project_name
-  environment         = var.environment
-  lambda_zip_path     = data.archive_file.lambda_zip.output_path
-  source_code_hash    = data.archive_file.lambda_zip.output_base64sha256
-  secrets_name        = var.secrets_name
-  vapi_api_key        = var.vapi_api_key
-  vapi_endpoint       = var.vapi_endpoint
-  vapi_assistant_id   = var.vapi_assistant_id
-  twilio_auth_token   = var.twilio_auth_token
+  project_name            = var.project_name
+  environment             = var.environment
+  lambda_zip_path         = data.archive_file.lambda_zip.output_path
+  source_code_hash        = data.archive_file.lambda_zip.output_base64sha256
+  secrets_name            = var.secrets_name
+  vapi_api_key            = var.vapi_api_key
+  vapi_endpoint           = var.vapi_endpoint
+  vapi_assistant_id       = var.vapi_assistant_id
+  twilio_auth_token       = var.twilio_auth_token
+  phone_routing_enabled   = var.phone_routing_enabled
+  phone_routing_map       = var.phone_routing_map
+  default_forward_timeout = var.default_forward_timeout
+  vapi_fallback_enabled   = var.vapi_fallback_enabled
 
   tags = var.tags
 }

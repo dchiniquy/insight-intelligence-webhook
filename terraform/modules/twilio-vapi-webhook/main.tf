@@ -77,10 +77,14 @@ resource "aws_lambda_function" "webhook" {
 
   environment {
     variables = {
-      VAPI_API_KEY      = local.secrets["VAPI-API-Key"]
-      VAPI_ENDPOINT     = var.vapi_endpoint
-      VAPI_ASSISTANT_ID = local.secrets["VAPI-Assistant-Id"]
-      TWILIO_AUTH_TOKEN = local.secrets["Twilio-Auth-Token"]
+      VAPI_API_KEY             = local.secrets["VAPI-API-Key"]
+      VAPI_ENDPOINT            = var.vapi_endpoint
+      VAPI_ASSISTANT_ID        = local.secrets["VAPI-Assistant-Id"]
+      TWILIO_AUTH_TOKEN        = local.secrets["Twilio-Auth-Token"]
+      PHONE_ROUTING_ENABLED    = tostring(var.phone_routing_enabled)
+      PHONE_ROUTING_MAP        = var.phone_routing_map
+      DEFAULT_FORWARD_TIMEOUT  = tostring(var.default_forward_timeout)
+      VAPI_FALLBACK_ENABLED    = tostring(var.vapi_fallback_enabled)
     }
   }
 
