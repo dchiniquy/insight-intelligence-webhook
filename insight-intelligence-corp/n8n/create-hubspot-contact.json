@@ -1,0 +1,174 @@
+{
+  "name": "Create HubSpot Contact",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "id": "start-node-id"
+    },
+    {
+      "parameters": {
+        "workflowInputs": [
+          {
+            "name": "email",
+            "type": "string"
+          },
+          {
+            "name": "firstname",
+            "type": "string"
+          },
+          {
+            "name": "lastname",
+            "type": "string"
+          },
+          {
+            "name": "phone",
+            "type": "string"
+          },
+          {
+            "name": "company",
+            "type": "string"
+          }
+        ]
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        460,
+        300
+      ],
+      "id": "execute-workflow-trigger-id"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "contact",
+        "operation": "upsert",
+        "email": "={{ $json.email }}",
+        "additionalFields": {
+          "contactProperties": {
+            "propertiesUi": {
+              "propertyValues": [
+                {
+                  "name": "firstname",
+                  "value": "={{ $json.firstname }}"
+                },
+                {
+                  "name": "lastname",
+                  "value": "={{ $json.lastname }}"
+                },
+                {
+                  "name": "phone",
+                  "value": "={{ $json.phone }}"
+                },
+                {
+                  "name": "company",
+                  "value": "={{ $json.company }}"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ],
+      "id": "hubspot-node-id",
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "687iXSpXdMKwW2N5",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success-response",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "message-response",
+              "name": "message",
+              "value": "Contact created successfully in HubSpot",
+              "type": "string"
+            },
+            {
+              "id": "contact-id",
+              "name": "contactId",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        900,
+        300
+      ],
+      "id": "set-response-id",
+      "name": "Format Response"
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Execute Workflow Trigger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "HubSpot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "hubspot-contact-creation-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "create-hubspot-contact-workflow",
+  "tags": ["hubspot", "ai-agent", "contact-creation"]
+}

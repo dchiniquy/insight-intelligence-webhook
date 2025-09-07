@@ -1,0 +1,395 @@
+{
+  "name": "website-call-request",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "website-call-request",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-7890-abcd-123456789001",
+      "name": "Website Call Request Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        384
+      ],
+      "webhookId": "auto-generated"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "name",
+              "value": "={{$json.body.name || $json.body.full_name || ($json.body.firstName && $json.body.lastName ? $json.body.firstName + ' ' + $json.body.lastName : ($json.body.firstName || $json.body.lastName || 'Name not provided'))}}"
+            },
+            {
+              "name": "phone",
+              "value": "={{$json.body.phone || $json.body.phone_number || $json.body.phoneNumber || 'Phone not provided'}}"
+            },
+            {
+              "name": "source_page",
+              "value": "={{$json.body.source || $json.body.page || $json.body.referrer || 'Website'}}"
+            },
+            {
+              "name": "urgency",
+              "value": "={{$json.body.urgency || $json.body.priority || 'normal'}}"
+            },
+            {
+              "name": "submission_time",
+              "value": "={{DateTime.now().toISO()}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-7890-abcd-123456789002",
+      "name": "Extract Request Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        0,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "name-validation",
+              "leftValue": "={{$node['Extract Request Data'].json['name']}}",
+              "rightValue": "Name not provided",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "name-length-validation",
+              "leftValue": "={{$node['Extract Request Data'].json['name'].trim().length}}",
+              "rightValue": 2,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-7890-abcd-123456789003",
+      "name": "Validate Name",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        240,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "phone-validation",
+              "leftValue": "={{$node['Extract Request Data'].json['phone']}}",
+              "rightValue": "Phone not provided",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "phone-format-validation",
+              "leftValue": "={{$node['Extract Request Data'].json['phone'].replace(/[^0-9]/g, '').length}}",
+              "rightValue": 10,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-7890-abcd-123456789004",
+      "name": "Validate Phone Number",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        480,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "formatted_phone",
+              "value": "={{$node['Extract Request Data'].json['phone'].replace(/[^0-9]/g, '').length === 10 ? '+1' + $node['Extract Request Data'].json['phone'].replace(/[^0-9]/g, '') : ($node['Extract Request Data'].json['phone'].startsWith('+') ? $node['Extract Request Data'].json['phone'].replace(/[^+0-9]/g, '') : '+1' + $node['Extract Request Data'].json['phone'].replace(/[^0-9]/g, ''))}}"
+            },
+            {
+              "name": "customer_name",
+              "value": "={{String($node['Extract Request Data'].json['name']).trim().substring(0, 35)}}"
+            },
+            {
+              "name": "call_name",
+              "value": "={{('Website Call Request - ' + String($node['Extract Request Data'].json['name']).trim()).substring(0, 40)}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-7890-abcd-123456789005",
+      "name": "Format Call Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        720,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.vapi.ai/call",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phoneNumberId\": \"aa785a4a-455b-4e2a-9497-df42b1d799ef\",\n  \"customer\": {\n    \"number\": \"{{$node['Format Call Data'].json['formatted_phone']}}\",\n    \"name\": \"{{$node['Format Call Data'].json['customer_name']}}\",\n    \"email\": \"website-lead@webchat.visitor\"\n  },\n  \"assistantId\": \"2b22c86f-99d7-4922-84f6-332f95998403\",\n  \"assistantOverrides\": {\n    \"variableValues\": {\n      \"customerName\": \"{{$node['Format Call Data'].json['customer_name']}}\",\n      \"companyName\": \"\",\n      \"industry\": \"\",\n      \"inquiryMessage\": \"Website call request\",\n      \"callReason\": \"Website call back request\",\n      \"urgency\": \"{{$node['Extract Request Data'].json['urgency']}}\",\n      \"sourcePage\": \"{{$node['Extract Request Data'].json['source_page']}}\"\n    }\n  },\n  \"name\": \"{{$node['Format Call Data'].json['call_name']}}\"\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-7890-abcd-123456789006",
+      "name": "Make VAPI Call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        960,
+        224
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "lixCSfAw9WeDYzuc",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "channelMessage",
+        "teamId": {
+          "__rl": true,
+          "value": "e76a435a-6314-476e-8803-85e4cf699eb1",
+          "mode": "list",
+          "cachedResultName": "Insight Intelligence"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "19:95edcac37453492a8a7ea59347530024@thread.tacv2",
+          "mode": "list",
+          "cachedResultName": "Sales"
+        },
+        "message": "=📞 **Website Call Back Request**\n\n**Contact Information:**\n• **Name:** {{$node['Extract Request Data'].json['name']}}\n• **Phone:** {{$node['Extract Request Data'].json['phone']}}\n• **Source:** {{$node['Extract Request Data'].json['source_page']}}\n• **Urgency:** {{$node['Extract Request Data'].json['urgency']}}\n\n**VAPI Call Details:**\n• **Call ID:** {{$node['Make VAPI Call'].json['id']}}\n• **Call Status:** {{$node['Make VAPI Call'].json['status']}}\n• **Initiated:** {{DateTime.fromISO($node['Extract Request Data'].json['submission_time']).toFormat('MMMM dd, yyyy \\u0061\\u0074 h:mm a')}}\n\n---\n*Call back request initiated automatically* 📱🤖",
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-7890-abcd-123456789011",
+      "name": "Send Teams Notification",
+      "type": "n8n-nodes-base.microsoftTeams",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        224
+      ],
+      "webhookId": "auto-generated-teams-webhook",
+      "credentials": {
+        "microsoftTeamsOAuth2Api": {
+          "id": "6pTc2hJVUNyTyOzc",
+          "name": "Microsoft Teams account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"success\",\n  \"message\": \"Thank you {{$node['Extract Request Data'].json['name']}}! We'll call you at {{$node['Extract Request Data'].json['phone']}} shortly.\",\n  \"call_initiated\": true,\n  \"vapi_call_id\": \"{{$node['Make VAPI Call'].json['id']}}\",\n  \"call_status\": \"{{$node['Make VAPI Call'].json['status']}}\",\n  \"estimated_call_time\": \"Within 5 minutes\",\n  \"submission_time\": \"{{$node['Extract Request Data'].json['submission_time']}}\"\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-7890-abcd-123456789007",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"error\",\n  \"message\": \"Please provide your name to request a call back.\",\n  \"error\": \"Name validation failed\",\n  \"required_fields\": [\"name\", \"phone\"]\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-7890-abcd-123456789008",
+      "name": "Respond Error - Invalid Name",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        480,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"error\",\n  \"message\": \"Please provide a valid phone number to request a call back.\",\n  \"error\": \"Phone number validation failed\",\n  \"suggestion\": \"Please include your area code (example: 555-123-4567)\"\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-7890-abcd-123456789009",
+      "name": "Respond Error - Invalid Phone",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        720,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"error\",\n  \"message\": \"Sorry, we're unable to initiate your call right now. Please try again in a few minutes.\",\n  \"error\": \"{{$json.error?.message || 'VAPI call failed'}}\",\n  \"fallback\": \"You can also call us directly at (555) 123-4567\"\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-e5f6-7890-abcd-123456789010",
+      "name": "Respond Error - Call Failed",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        544
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Website Call Request Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Request Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Request Data": {
+      "main": [
+        [
+          {
+            "node": "Validate Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Name": {
+      "main": [
+        [
+          {
+            "node": "Validate Phone Number",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error - Invalid Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Phone Number": {
+      "main": [
+        [
+          {
+            "node": "Format Call Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error - Invalid Phone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Call Data": {
+      "main": [
+        [
+          {
+            "node": "Make VAPI Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make VAPI Call": {
+      "main": [
+        [
+          {
+            "node": "Send Teams Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Teams Notification": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "new-website-call-request-workflow",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "99aaeba6b75257ee350bb8eb8800a228cb7b97e21f9b2e1e88ec25277f30b9a0"
+  },
+  "id": "websiteCallRequest001",
+  "tags": []
+}

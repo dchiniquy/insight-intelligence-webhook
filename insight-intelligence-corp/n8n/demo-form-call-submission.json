@@ -1,10 +1,10 @@
 {
-  "name": "demo-form-call-request",
+  "name": "demo-form-submission",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "demo-form-call-request",
+        "path": "demo-form-submission",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -151,32 +151,6 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "https://api.vapi.ai/call",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "httpHeaderAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"phoneNumberId\": \"aa785a4a-455b-4e2a-9497-df42b1d799ef\",\n  \"customer\": {\n    \"number\": \"{{$node['Format Phone Number'].json['formatted_phone']}}\",\n    \"name\": \"{{$node['Format Phone Number'].json['customer_name']}}\",\n    \"email\": \"{{$node['Format Phone Number'].json['customer_email']}}\"\n  },\n  \"assistantId\": \"2b22c86f-99d7-4922-84f6-332f95998403\",\n  \"assistantOverrides\": {\n    \"variableValues\": {\n      \"customerName\": \"{{$node['Extract Form Data'].json['name']}}\",\n      \"companyName\": \"{{$node['Extract Form Data'].json['company']}}\",\n      \"industry\": \"{{$node['Extract Form Data'].json['industry']}}\",\n      \"inquiryMessage\": \"{{$node['Extract Form Data'].json['message']}}\",\n      \"callReason\": \"Demo request follow-up from website form submission\",\n      \"urgency\": \"{{$node['Extract Form Data'].json['urgency']}}\",\n      \"sourcePage\": \"{{$node['Extract Form Data'].json['source_page']}}\"\n    }\n  },\n  \"name\": \"Demo Follow-up Call - {{$node['Extract Form Data'].json['name']}}\"\n}",
-        "options": {}
-      },
-      "id": "088bbb17-a11e-4bc7-8239-be070094e8e0",
-      "name": "Make VAPI Call",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.1,
-      "position": [
-        960,
-        304
-      ],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "lixCSfAw9WeDYzuc",
-          "name": "Header Auth account"
-        }
-      }
-    },
-    {
-      "parameters": {
         "authentication": "oAuth2",
         "email": "={{$node['Extract Form Data'].json['email']}}",
         "additionalFields": {
@@ -219,7 +193,7 @@
           "mode": "list",
           "cachedResultName": "Sales"
         },
-        "message": "=📞 **Outbound Demo Call Initiated**\n\n**Contact Information:**\n• **Name:** {{$node['Extract Form Data'].json['name']}}\n• **Phone:** {{$node['Extract Form Data'].json['phone']}}\n• **Email:** {{$node['Extract Form Data'].json['email']}}\n• **Company:** {{$node['Extract Form Data'].json['company']}}\n• **Industry:** {{$node['Extract Form Data'].json['industry']}}\n\n**HubSpot Integration:**\n• **Contact ID:** {{$node['Create HubSpot Contact'].json['id']}}\n• **HubSpot URL:** [View Contact](https://app.hubspot.com/contacts/{{$node['Create HubSpot Contact'].json['portalId']}}/contact/{{$node['Create HubSpot Contact'].json['id']}})\n• **Lead Source:** Demo Form - VAPI Call\n\n**Call Details:**\n• **VAPI Call ID:** {{$node['Make VAPI Call'].json['id']}}\n• **Call Status:** {{$node['Make VAPI Call'].json['status']}}\n• **Urgency:** {{$node['Extract Form Data'].json['urgency']}}\n• **Source:** {{$node['Extract Form Data'].json['source_page']}}\n• **Initiated:** {{DateTime.fromISO($node['Extract Form Data'].json['submission_time']).toFormat('MMMM dd, yyyy \\u0061\\u0074 h:mm a')}}\n\n**Customer Message:**\n{{$node['Extract Form Data'].json['message']}}\n\n---\n*AI-powered outbound call automatically initiated* 🤖📱",
+        "message": "=📋 **New Demo Form Submission**\n\n**Contact Information:**\n• **Name:** {{$node['Extract Form Data'].json['name']}}\n• **Phone:** {{$node['Extract Form Data'].json['phone']}}\n• **Email:** {{$node['Extract Form Data'].json['email']}}\n• **Company:** {{$node['Extract Form Data'].json['company']}}\n• **Industry:** {{$node['Extract Form Data'].json['industry']}}\n\n**HubSpot Integration:**\n• **Contact ID:** {{$node['Create HubSpot Contact'].json['id']}}\n• **HubSpot URL:** [View Contact](https://app.hubspot.com/contacts/{{$node['Create HubSpot Contact'].json['portalId']}}/contact/{{$node['Create HubSpot Contact'].json['id']}})\n• **Lead Source:** Demo Form Submission\n\n**Form Details:**\n• **Urgency:** {{$node['Extract Form Data'].json['urgency']}}\n• **Source:** {{$node['Extract Form Data'].json['source_page']}}\n• **Call Preference:** {{$node['Extract Form Data'].json['call_preference']}}\n• **Submitted:** {{DateTime.fromISO($node['Extract Form Data'].json['submission_time']).toFormat('MMMM dd, yyyy \\u0061\\u0074 h:mm a')}}\n\n**Customer Message:**\n{{$node['Extract Form Data'].json['message']}}\n\n---\n*Demo form submitted and contact created in HubSpot* 📝✨",
         "options": {}
       },
       "id": "c31dc7ac-8083-4be7-b8a5-5c1ae58fc269",
@@ -241,7 +215,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"status\": \"success\",\n  \"message\": \"Thank you for your demo request! We'll call you shortly.\",\n  \"call_initiated\": true,\n  \"vapi_call_id\": \"{{$node['Make VAPI Call'].json['id']}}\",\n  \"hubspot_contact_id\": \"{{$node['Create HubSpot Contact'].json['id']}}\",\n  \"estimated_call_time\": \"Within 5 minutes\",\n  \"submission_id\": \"{{$node['Extract Form Data'].json['submission_time']}}\"\n}",
+        "responseBody": "={\n  \"status\": \"success\",\n  \"message\": \"Thank you for your demo request! Our team will contact you shortly.\",\n  \"form_submitted\": true,\n  \"hubspot_contact_id\": \"{{$node['Create HubSpot Contact'].json['id']}}\",\n  \"submission_time\": \"{{$node['Extract Form Data'].json['submission_time']}}\",\n  \"next_steps\": \"Our sales team will reach out within 24 hours to schedule your demo\"\n}",
         "options": {}
       },
       "id": "576672e5-8ab5-4fa1-829c-24d4c2da9090",
@@ -338,17 +312,6 @@
       ]
     },
     "Create HubSpot Contact": {
-      "main": [
-        [
-          {
-            "node": "Make VAPI Call",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Make VAPI Call": {
       "main": [
         [
           {
