@@ -1,0 +1,289 @@
+{
+  "info": {
+    "name": "VAPI Appointment Booking Tests",
+    "description": "Test collection for VAPI appointment booking workflow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "booking_webhook_url",
+      "value": "https://your-n8n-domain.com/webhook/book-appointment",
+      "description": "Base URL for the VAPI appointment booking webhook"
+    }
+  ],
+  "item": [
+    {
+      "name": "Valid Booking Request - All Fields",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer_name\": \"John Smith\",\n  \"customer_email\": \"john.smith@example.com\",\n  \"customer_phone\": \"+15551234567\",\n  \"company_name\": \"ABC Corporation\",\n  \"appointment_datetime\": \"2024-12-20T14:00:00\",\n  \"timezone\": \"America/Los_Angeles\",\n  \"duration_minutes\": 30,\n  \"appointment_type\": \"Demo\",\n  \"notes\": \"Interested in AI phone automation for medical practice\",\n  \"vapi_call_id\": \"call_12345\"\n}"
+        },
+        "url": {
+          "raw": "{{booking_webhook_url}}"
+        },
+        "description": "Test successful booking with all optional fields provided"
+      },
+      "response": []
+    },
+    {
+      "name": "Valid Booking Request - Required Fields Only",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer_name\": \"Sarah Johnson\",\n  \"customer_email\": \"sarah@healthcareplus.com\",\n  \"appointment_datetime\": \"2024-12-21T10:30:00\"\n}"
+        },
+        "url": {
+          "raw": "{{booking_webhook_url}}"
+        },
+        "description": "Test booking with only required fields (defaults should apply)"
+      },
+      "response": []
+    },
+    {
+      "name": "Alternative Parameter Names - VAPI Format",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Michael Wilson\",\n  \"email\": \"mike@hvacpro.com\",\n  \"phone\": \"555-987-6543\",\n  \"company\": \"Wilson HVAC Services\",\n  \"datetime\": \"2024-12-22T15:00:00\",\n  \"time_zone\": \"America/Chicago\",\n  \"duration\": 45,\n  \"type\": \"Consultation\",\n  \"message\": \"HVAC business owner interested in after-hours call automation\",\n  \"call_id\": \"vapi_67890\"\n}"
+        },
+        "url": {
+          "raw": "{{booking_webhook_url}}"
+        },
+        "description": "Test with alternative parameter names that the workflow should handle"
+      },
+      "response": []
+    },
+    {
+      "name": "Missing Customer Name - Validation Error",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer_email\": \"test@example.com\",\n  \"appointment_datetime\": \"2024-12-23T11:00:00\"\n}"
+        },
+        "url": {
+          "raw": "{{booking_webhook_url}}"
+        },
+        "description": "Test validation error when customer name is missing"
+      },
+      "response": []
+    },
+    {
+      "name": "Missing Email - Validation Error",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer_name\": \"Test Customer\",\n  \"appointment_datetime\": \"2024-12-23T13:00:00\"\n}"
+        },
+        "url": {
+          "raw": "{{booking_webhook_url}}"
+        },
+        "description": "Test validation error when customer email is missing"
+      },
+      "response": []
+    },
+    {
+      "name": "Missing Appointment DateTime - Validation Error",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer_name\": \"Test Customer\",\n  \"customer_email\": \"test@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{booking_webhook_url}}"
+        },
+        "description": "Test validation error when appointment datetime is missing"
+      },
+      "response": []
+    },
+    {
+      "name": "Invalid DateTime Format",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer_name\": \"Test Customer\",\n  \"customer_email\": \"test@example.com\",\n  \"appointment_datetime\": \"invalid-date-format\"\n}"
+        },
+        "url": {
+          "raw": "{{booking_webhook_url}}"
+        },
+        "description": "Test error handling for invalid datetime format"
+      },
+      "response": []
+    },
+    {
+      "name": "Medical Practice Demo Booking",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer_name\": \"Dr. Jennifer Martinez\",\n  \"firstName\": \"Jennifer\",\n  \"lastName\": \"Martinez\",\n  \"customer_email\": \"jennifer@coastaldental.com\",\n  \"customer_phone\": \"+15559876543\",\n  \"company_name\": \"Coastal Dental Practice\",\n  \"appointment_datetime\": \"2024-12-24T09:00:00\",\n  \"timezone\": \"America/New_York\",\n  \"duration_minutes\": 45,\n  \"appointment_type\": \"Demo\",\n  \"notes\": \"Medical practice missing 20% of after-hours calls. Interested in HIPAA-compliant AI phone automation.\",\n  \"vapi_call_id\": \"medical_demo_001\"\n}"
+        },
+        "url": {
+          "raw": "{{booking_webhook_url}}"
+        },
+        "description": "Realistic test case for medical practice demo booking"
+      },
+      "response": []
+    },
+    {
+      "name": "Real Estate Agent Consultation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer_name\": \"Lisa Chen\",\n  \"customer_email\": \"lisa@primerealty.com\",\n  \"customer_phone\": \"555-321-9876\",\n  \"company_name\": \"Prime Realty Group\",\n  \"appointment_datetime\": \"2024-12-26T16:00:00\",\n  \"timezone\": \"America/Los_Angeles\",\n  \"duration_minutes\": 60,\n  \"appointment_type\": \"Consultation\",\n  \"notes\": \"Real estate agent losing leads due to slow response times. Wants 24/7 lead capture system.\",\n  \"vapi_call_id\": \"realestate_consult_002\"\n}"
+        },
+        "url": {
+          "raw": "{{booking_webhook_url}}"
+        },
+        "description": "Test case for real estate consultation booking with longer duration"
+      },
+      "response": []
+    },
+    {
+      "name": "HVAC Emergency Service Demo",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Tom Wilson\",\n  \"email\": \"tom@wilsonhvac.com\",\n  \"phone\": \"+15551122334\",\n  \"company\": \"Wilson HVAC & Heating\",\n  \"datetime\": \"2024-12-27T08:30:00\",\n  \"time_zone\": \"America/Denver\",\n  \"duration\": 30,\n  \"type\": \"Demo\",\n  \"description\": \"HVAC contractor missing emergency calls when on job sites. Needs after-hours automation.\",\n  \"callId\": \"hvac_emergency_demo_003\"\n}"
+        },
+        "url": {
+          "raw": "{{booking_webhook_url}}"
+        },
+        "description": "HVAC business demo using alternative parameter names and early morning slot"
+      },
+      "response": []
+    },
+    {
+      "name": "Professional Services Implementation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer_name\": \"Robert Kim\",\n  \"customer_email\": \"robert@kimlaw.com\",\n  \"customer_phone\": \"555-444-7788\",\n  \"company_name\": \"Kim & Associates Law Firm\",\n  \"appointment_datetime\": \"2024-12-30T14:30:00\",\n  \"timezone\": \"America/Chicago\",\n  \"duration_minutes\": 90,\n  \"appointment_type\": \"Implementation Planning\",\n  \"notes\": \"Law firm ready to implement AI consultation scheduling. High-intent prospect from website form.\",\n  \"vapi_call_id\": \"legal_implementation_004\"\n}"
+        },
+        "url": {
+          "raw": "{{booking_webhook_url}}"
+        },
+        "description": "Implementation planning meeting for professional services (longer duration)"
+      },
+      "response": []
+    },
+    {
+      "name": "Edge Case - Very Long Company Name",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer_name\": \"Alexandra Rodriguez-Thompson\",\n  \"customer_email\": \"alexandra@verylongcompanyname.com\",\n  \"company_name\": \"Very Long Company Name That Might Cause Issues With Meeting Subject Line Length Limits Inc.\",\n  \"appointment_datetime\": \"2024-12-31T10:00:00\",\n  \"timezone\": \"America/Los_Angeles\",\n  \"appointment_type\": \"Demo\",\n  \"notes\": \"Testing edge case with very long company name and hyphenated customer name\"\n}"
+        },
+        "url": {
+          "raw": "{{booking_webhook_url}}"
+        },
+        "description": "Edge case testing with long names and company titles"
+      },
+      "response": []
+    },
+    {
+      "name": "Empty Request Body",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{booking_webhook_url}}"
+        },
+        "description": "Test workflow behavior with completely empty request"
+      },
+      "response": []
+    }
+  ]
+}

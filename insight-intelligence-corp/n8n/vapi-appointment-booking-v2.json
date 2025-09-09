@@ -1,0 +1,416 @@
+{
+  "name": "book-appointment",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "book-appointment",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1a74679a-5976-4d00-a912-c0d2fe7886ec",
+      "name": "VAPI Booking Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -2272,
+        48
+      ],
+      "webhookId": "auto-generated"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "customer_name",
+              "value": "={{$json.body.customer_name || $json.body.name || $json.body.full_name || ($json.body.firstName && $json.body.lastName ? $json.body.firstName + ' ' + $json.body.lastName : 'Name from call')}}"
+            },
+            {
+              "name": "firstName",
+              "value": "={{$json.body.firstName || ($json.body.customer_name ? $json.body.customer_name.trim().split(' ')[0] : ($json.body.name ? $json.body.name.trim().split(' ')[0] : 'Customer'))}}"
+            },
+            {
+              "name": "lastName",
+              "value": "={{$json.body.lastName || ($json.body.customer_name && $json.body.customer_name.trim().split(' ').length > 1 ? $json.body.customer_name.trim().split(' ').slice(1).join(' ') : ($json.body.name && $json.body.name.trim().split(' ').length > 1 ? $json.body.name.trim().split(' ').slice(1).join(' ') : 'Lead'))}}"
+            },
+            {
+              "name": "customer_email",
+              "value": "={{$json.body.customer_email || $json.body.email || $json.body.email_address || ''}}"
+            },
+            {
+              "name": "customer_phone",
+              "value": "={{$json.body.customer_phone || $json.body.phone || $json.body.phone_number || $json.body.phoneNumber || ''}}"
+            },
+            {
+              "name": "company_name",
+              "value": "={{$json.body.company_name || $json.body.company || $json.body.organization || $json.body.business_name || ''}}"
+            },
+            {
+              "name": "appointment_datetime",
+              "value": "={{$json.body.appointment_datetime || $json.body.datetime || $json.body.start_time || ''}}"
+            },
+            {
+              "name": "timezone",
+              "value": "={{$json.body.timezone || $json.body.time_zone || 'America/Los_Angeles'}}"
+            },
+            {
+              "name": "duration_minutes",
+              "value": "={{$json.body.duration_minutes || $json.body.duration || 30}}"
+            },
+            {
+              "name": "appointment_type",
+              "value": "={{$json.body.appointment_type || $json.body.type || $json.body.meeting_type || 'Demo'}}"
+            },
+            {
+              "name": "notes",
+              "value": "={{$json.body.notes || $json.body.message || $json.body.description || $json.body.comments || 'Appointment booked via VAPI'}}"
+            },
+            {
+              "name": "vapi_call_id",
+              "value": "={{$json.body.vapi_call_id || $json.body.call_id || $json.body.callId || 'Unknown'}}"
+            },
+            {
+              "name": "booking_time",
+              "value": "={{DateTime.now().toISO()}}"
+            },
+            {
+              "name": "source",
+              "value": "VAPI Phone Call"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4f3f9497-0a8a-4e34-aa58-175b6e583dfa",
+      "name": "Extract Booking Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -2032,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-name",
+              "leftValue": "={{$node['Extract Booking Data'].json['customer_name']}}",
+              "rightValue": "Name from call",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "has-email",
+              "leftValue": "={{$node['Extract Booking Data'].json['customer_email']}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "has-datetime",
+              "leftValue": "={{$node['Extract Booking Data'].json['appointment_datetime']}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ee8c8f31-8c42-4e5e-b583-6c75b41b03c7",
+      "name": "Validate Required Fields",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -1792,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Return validation error response\nconst bookingData = $('Extract Booking Data').first().json;\n\nconst missingFields = [];\nif (!bookingData.customer_name || bookingData.customer_name === 'Name from call') {\n  missingFields.push('customer_name');\n}\nif (!bookingData.customer_email) {\n  missingFields.push('customer_email');\n}\nif (!bookingData.appointment_datetime) {\n  missingFields.push('appointment_datetime');\n}\n\nconst errorResponse = {\n  status: 'error',\n  message: `Missing required booking information: ${missingFields.join(', ')}`,\n  missing_fields: missingFields,\n  provided_data: {\n    customer_name: bookingData.customer_name,\n    customer_email: bookingData.customer_email || 'not provided',\n    appointment_datetime: bookingData.appointment_datetime || 'not provided'\n  },\n  conversation_context: {\n    suggested_response: `I need a few more details to book your appointment. Could you provide ${missingFields.includes('customer_name') ? 'your name' : ''}${missingFields.includes('customer_email') ? (missingFields.includes('customer_name') ? ' and email address' : 'your email address') : ''}${missingFields.includes('appointment_datetime') ? ' and your preferred appointment time' : ''}?`,\n    required_fields: missingFields,\n    next_action: 'collect_missing_information'\n  }\n};\n\nreturn { json: errorResponse };"
+      },
+      "id": "3e452c20-9335-4600-911b-36d0e252ffe9",
+      "name": "Format Validation Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1552,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "8304ec5a-edef-4c22-b5df-f8de95602f1d",
+      "name": "Send Validation Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -1312,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare meeting data for Microsoft Graph API\nconst bookingData = $('Extract Booking Data').first().json;\n\n// Validate and parse datetime\nconst appointmentDateTime = new Date(bookingData.appointment_datetime);\nif (isNaN(appointmentDateTime.getTime())) {\n  throw new Error(`Invalid appointment_datetime format: ${bookingData.appointment_datetime}`);\n}\n\n// Calculate end time\nconst durationMinutes = parseInt(bookingData.duration_minutes) || 30;\nconst endDateTime = new Date(appointmentDateTime.getTime() + (durationMinutes * 60000));\n\n// Create meeting subject\nconst subject = `${bookingData.appointment_type} Call - ${bookingData.firstName} ${bookingData.lastName}${bookingData.company_name ? ` (${bookingData.company_name})` : ''}`;\n\n// Create meeting body\nconst bodyContent = `<p><strong>${bookingData.appointment_type} call with ${bookingData.customer_name}</strong></p>\n${bookingData.company_name ? `<p><strong>Company:</strong> ${bookingData.company_name}</p>` : ''}\n<p><strong>Phone:</strong> ${bookingData.customer_phone || 'Not provided'}</p>\n<p><strong>Email:</strong> ${bookingData.customer_email}</p>\n<p><strong>VAPI Call ID:</strong> ${bookingData.vapi_call_id}</p>\n${bookingData.notes ? `<p><strong>Notes:</strong> ${bookingData.notes}</p>` : ''}\n<p>We'll show you how our AI automation system can reduce your phone handling costs by 60-80% and recover missed revenue opportunities.</p>`;\n\n// Prepare event data for Microsoft Graph\nconst eventData = {\n  subject: subject,\n  body: {\n    contentType: \"HTML\",\n    content: bodyContent\n  },\n  start: {\n    dateTime: appointmentDateTime.toISOString().split('.')[0],\n    timeZone: bookingData.timezone\n  },\n  end: {\n    dateTime: endDateTime.toISOString().split('.')[0], \n    timeZone: bookingData.timezone\n  },\n  attendees: [\n    {\n      emailAddress: {\n        address: bookingData.customer_email,\n        name: bookingData.customer_name\n      },\n      type: \"required\"\n    }\n  ],\n  isOnlineMeeting: true,\n  onlineMeetingProvider: \"teamsForBusiness\",\n  isReminderOn: true,\n  reminderMinutesBeforeStart: 15\n};\n\nconsole.log('Prepared event data:', JSON.stringify(eventData, null, 2));\n\nreturn {\n  json: {\n    eventData,\n    bookingData,\n    readableDateTime: appointmentDateTime.toLocaleString('en-US', {\n      timeZone: bookingData.timezone,\n      weekday: 'long',\n      month: 'long',\n      day: 'numeric',\n      year: 'numeric',\n      hour: 'numeric',\n      minute: '2-digit',\n      hour12: true\n    })\n  }\n};"
+      },
+      "id": "6299a7ac-e852-4ded-9be7-9a9ce6750411",
+      "name": "Prepare Meeting Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1552,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Handle booking errors\nconst error = $input.first().json;\nconst bookingData = $('Extract Booking Data').first().json;\n\nconst errorResponse = {\n  status: 'error',\n  message: 'Unable to create appointment at this time',\n  error_details: error.message || 'Unknown error occurred during booking',\n  provided_data: {\n    customer_name: bookingData.customer_name,\n    customer_email: bookingData.customer_email,\n    appointment_datetime: bookingData.appointment_datetime,\n    appointment_type: bookingData.appointment_type\n  },\n  conversation_context: {\n    suggested_response: `I'm having trouble booking that appointment in my calendar right now. Let me take down all your details and I'll have someone from our team reach out within the hour to confirm your ${bookingData.appointment_type.toLowerCase()} and send you the meeting details directly.`,\n    fallback_action: 'manual_booking_required',\n    escalation_needed: true,\n    collected_information: {\n      name: bookingData.customer_name,\n      email: bookingData.customer_email,\n      phone: bookingData.customer_phone,\n      company: bookingData.company_name,\n      preferred_time: bookingData.appointment_datetime,\n      type: bookingData.appointment_type\n    }\n  }\n};\n\nconsole.log('Error response:', JSON.stringify(errorResponse, null, 2));\n\nreturn { json: errorResponse };"
+      },
+      "id": "32a4d840-5bd8-4822-a43e-d98ff63063a4",
+      "name": "Handle Booking Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1072,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "dc0b09d4-7b2e-482a-bf00-5d168c94e902",
+      "name": "Send Booking Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -832,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.microsoft.com/v1.0/me/calendar/events",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftOutlookOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.eventData }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1248,
+        -96
+      ],
+      "id": "9a49ee83-1105-4aa0-b60c-a9cd5da1e7f5",
+      "name": "Create Teams Meeting",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "TjQCfQbNro7WgCik",
+          "name": "Microsoft Outlook account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format successful booking response for VAPI\nconst meetingData = $('Create Teams Meeting').first().json;\nconst prepareMeetingData = $('Prepare Meeting Data').first().json;\nconst bookingData = prepareMeetingData.bookingData;\n\nconsole.log('Meeting created:', JSON.stringify(meetingData, null, 2));\n\n// Extract Teams meeting details\nconst meetingUrl = meetingData.onlineMeeting?.joinUrl || meetingData.webLink;\nconst meetingId = meetingData.onlineMeeting?.conferenceId || meetingData.id;\n\nconst successResponse = {\n  status: 'success',\n  message: 'Appointment successfully booked and Teams meeting created',\n  appointment: {\n    id: meetingData.id,\n    subject: meetingData.subject,\n    start_time: meetingData.start.dateTime,\n    end_time: meetingData.end.dateTime,\n    timezone: meetingData.start.timeZone,\n    readable_datetime: prepareMeetingData.readableDateTime,\n    meeting_url: meetingUrl,\n    meeting_id: meetingId\n  },\n  customer: {\n    name: bookingData.customer_name,\n    email: bookingData.customer_email,\n    phone: bookingData.customer_phone,\n    company: bookingData.company_name\n  },\n  conversation_context: {\n    confirmation_message: `Perfect! I've scheduled your ${bookingData.appointment_type.toLowerCase()} for ${prepareMeetingData.readableDateTime}. You'll receive a calendar invitation with the Teams meeting link at ${bookingData.customer_email}. Looking forward to showing you how we can help ${bookingData.company_name || 'your business'} capture more leads and reduce costs!`,\n    next_steps: [\n      'Calendar invitation will be sent shortly',\n      'Teams meeting link included in invitation', \n      'Reminder will be sent 15 minutes before the meeting'\n    ]\n  }\n};\n\nreturn {\n  json: successResponse\n};"
+      },
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "Format Success Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1008,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "b2c3d4e5-f678-9012-3456-789abcdef012",
+      "name": "Send Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -768,
+        -112
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "VAPI Booking Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Booking Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Booking Data": {
+      "main": [
+        [
+          {
+            "node": "Validate Required Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Required Fields": {
+      "main": [
+        [
+          {
+            "node": "Prepare Meeting Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Validation Error": {
+      "main": [
+        [
+          {
+            "node": "Send Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Meeting Data": {
+      "main": [
+        [
+          {
+            "node": "Create Teams Meeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Teams Meeting": {
+      "main": [
+        [
+          {
+            "node": "Format Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "error": [
+        [
+          {
+            "node": "Handle Booking Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Success Response": {
+      "main": [
+        [
+          {
+            "node": "Send Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle Booking Error": {
+      "main": [
+        [
+          {
+            "node": "Send Booking Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4e8f1aea-b68f-4bb2-bd65-08f1b30917d7",
+  "meta": {
+    "instanceId": "99aaeba6b75257ee350bb8eb8800a228cb7b97e21f9b2e1e88ec25277f30b9a0"
+  },
+  "id": "F1pCVe89U3Mw27ot",
+  "tags": []
+}

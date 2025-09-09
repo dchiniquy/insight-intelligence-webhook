@@ -1,0 +1,268 @@
+{
+  "info": {
+    "name": "VAPI Availability Checker Tests",
+    "description": "Test collection for VAPI availability checker workflow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "availability_webhook_url",
+      "value": "https://your-n8n-domain.com/webhook/check-availability",
+      "description": "Base URL for the VAPI availability checker webhook"
+    }
+  ],
+  "item": [
+    {
+      "name": "Basic Availability Check - Next 7 Days",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"timezone\": \"America/Los_Angeles\",\n  \"duration_minutes\": 30\n}"
+        },
+        "url": {
+          "raw": "{{availability_webhook_url}}"
+        },
+        "description": "Test basic availability check with default settings (next 7 days)"
+      },
+      "response": []
+    },
+    {
+      "name": "Specific Date - Morning Preference",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"date\": \"2024-12-20\",\n  \"requested_date\": \"2024-12-20\",\n  \"time_preference\": \"morning\",\n  \"timezone\": \"America/Los_Angeles\",\n  \"duration_minutes\": 30\n}"
+        },
+        "url": {
+          "raw": "{{availability_webhook_url}}"
+        },
+        "description": "Check availability for specific date with morning time preference"
+      },
+      "response": []
+    },
+    {
+      "name": "Specific Date - Afternoon Preference",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"date\": \"2024-12-21\",\n  \"requested_date\": \"2024-12-21\",\n  \"time_preference\": \"afternoon\",\n  \"timezone\": \"America/New_York\",\n  \"duration_minutes\": 45\n}"
+        },
+        "url": {
+          "raw": "{{availability_webhook_url}}"
+        },
+        "description": "Check availability for specific date with afternoon preference and different timezone"
+      },
+      "response": []
+    },
+    {
+      "name": "Specific Date - Evening Preference",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"date\": \"2024-12-22\",\n  \"requested_date\": \"2024-12-22\",\n  \"time_preference\": \"evening\",\n  \"timezone\": \"America/Chicago\",\n  \"duration_minutes\": 60\n}"
+        },
+        "url": {
+          "raw": "{{availability_webhook_url}}"
+        },
+        "description": "Check availability for specific date with evening preference"
+      },
+      "response": []
+    },
+    {
+      "name": "Custom Date Range",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"start_date\": \"2024-12-23T09:00:00\",\n  \"end_date\": \"2024-12-25T17:00:00\",\n  \"timezone\": \"America/Los_Angeles\",\n  \"duration_minutes\": 30\n}"
+        },
+        "url": {
+          "raw": "{{availability_webhook_url}}"
+        },
+        "description": "Check availability within custom date range"
+      },
+      "response": []
+    },
+    {
+      "name": "Full Day Availability - Any Time",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"date\": \"2024-12-26\",\n  \"requested_date\": \"2024-12-26\",\n  \"time_preference\": \"any\",\n  \"timezone\": \"America/Los_Angeles\",\n  \"duration_minutes\": 30\n}"
+        },
+        "url": {
+          "raw": "{{availability_webhook_url}}"
+        },
+        "description": "Check full day availability without time preference"
+      },
+      "response": []
+    },
+    {
+      "name": "Different Timezone - UTC",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"date\": \"2024-12-27\",\n  \"requested_date\": \"2024-12-27\",\n  \"time_preference\": \"morning\",\n  \"timezone\": \"UTC\",\n  \"duration_minutes\": 30\n}"
+        },
+        "url": {
+          "raw": "{{availability_webhook_url}}"
+        },
+        "description": "Test with UTC timezone"
+      },
+      "response": []
+    },
+    {
+      "name": "VAPI Format - Minimal Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"preference\": \"afternoon\",\n  \"duration\": 30\n}"
+        },
+        "url": {
+          "raw": "{{availability_webhook_url}}"
+        },
+        "description": "Test with VAPI-style parameter names (preference instead of time_preference, duration instead of duration_minutes)"
+      },
+      "response": []
+    },
+    {
+      "name": "Long Meeting Duration",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"date\": \"2024-12-28\",\n  \"requested_date\": \"2024-12-28\",\n  \"time_preference\": \"morning\",\n  \"timezone\": \"America/Los_Angeles\",\n  \"duration_minutes\": 90\n}"
+        },
+        "url": {
+          "raw": "{{availability_webhook_url}}"
+        },
+        "description": "Test availability check for longer meeting duration (90 minutes)"
+      },
+      "response": []
+    },
+    {
+      "name": "Edge Case - Past Date",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"date\": \"2024-01-01\",\n  \"requested_date\": \"2024-01-01\",\n  \"time_preference\": \"morning\",\n  \"timezone\": \"America/Los_Angeles\",\n  \"duration_minutes\": 30\n}"
+        },
+        "url": {
+          "raw": "{{availability_webhook_url}}"
+        },
+        "description": "Test behavior with past date (should handle gracefully)"
+      },
+      "response": []
+    },
+    {
+      "name": "Invalid Time Preference",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"date\": \"2024-12-29\",\n  \"requested_date\": \"2024-12-29\",\n  \"time_preference\": \"midnight\",\n  \"timezone\": \"America/Los_Angeles\",\n  \"duration_minutes\": 30\n}"
+        },
+        "url": {
+          "raw": "{{availability_webhook_url}}"
+        },
+        "description": "Test with invalid time preference (should default to full day)"
+      },
+      "response": []
+    },
+    {
+      "name": "Empty Request Body",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{availability_webhook_url}}"
+        },
+        "description": "Test with empty request body (should use all defaults)"
+      },
+      "response": []
+    }
+  ]
+}
