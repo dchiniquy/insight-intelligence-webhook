@@ -101,72 +101,114 @@
   {
     "type": "function",
     "function": {
-      "name": "collect_contact_information",
-      "description": "Store contact information and call details in CRM. Use this for EVERY call where you collect any contact information, regardless of whether they book a demo or not. This ensures proper lead tracking and follow-up.",
+      "name": "assistant_message_handler",
+      "description": "Send message to Don via Teams with urgency-based formatting. Use this for EVERY call where you collect any contact information, regardless of whether they book a demo or not. This ensures proper message delivery and follow-up.",
       "parameters": {
         "type": "object",
         "properties": {
           "name": {
             "type": "string",
-            "description": "Customer's full name"
+            "description": "Caller's full name"
           },
           "firstName": {
             "type": "string",
-            "description": "Customer's first name"
+            "description": "Caller's first name"
           },
           "lastName": {
             "type": "string",
-            "description": "Customer's last name"
+            "description": "Caller's last name"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Caller's phone number"
+          },
+          "phone_number": {
+            "type": "string",
+            "description": "Alternative parameter for caller's phone number"
           },
           "email": {
             "type": "string",
             "format": "email",
-            "description": "Customer's email address"
+            "description": "Caller's email address"
           },
-          "phone": {
+          "email_address": {
             "type": "string",
-            "description": "Customer's phone number"
+            "format": "email",
+            "description": "Alternative parameter for caller's email address"
           },
           "company": {
             "type": "string",
-            "description": "Customer's company name"
+            "description": "Caller's company name"
+          },
+          "company_name": {
+            "type": "string",
+            "description": "Alternative parameter for caller's company name"
+          },
+          "organization": {
+            "type": "string",
+            "description": "Caller's organization name"
           },
           "industry": {
             "type": "string",
-            "description": "Customer's business industry"
+            "description": "Caller's business industry or relationship type"
           },
           "message": {
             "type": "string",
-            "description": "Summary of the conversation, customer needs, and key discussion points"
+            "description": "Detailed message content, conversation summary, and caller's needs"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes about the call"
+          },
+          "description": {
+            "type": "string",
+            "description": "Call description or summary"
           },
           "call_outcome": {
             "type": "string",
-            "enum": ["demo_scheduled", "demo_requested", "interested", "not_interested", "callback_requested", "pricing_inquiry", "implementation_ready"],
-            "description": "What happened during the call"
+            "enum": ["message_taken", "appointment_scheduled", "callback_requested", "urgent_callback_requested", "appointment_requested", "technical_support", "information_provided"],
+            "description": "What happened during the call - determines message routing"
           },
           "interest_level": {
             "type": "string",
-            "enum": ["hot", "warm", "cold"],
-            "description": "How qualified/interested the prospect is"
+            "enum": ["urgent", "important", "routine"],
+            "description": "Urgency level for follow-up - 'urgent' triggers immediate notification, 'important' same-day, 'routine' within 24 hours"
+          },
+          "urgency": {
+            "type": "string",
+            "enum": ["urgent", "important", "routine"],
+            "description": "Alternative parameter for urgency level"
           },
           "next_steps": {
             "type": "string",
-            "description": "Specific next steps or follow-up actions needed"
+            "description": "Specific callback preferences, timing, or follow-up actions needed"
           },
-          "call_duration": {
+          "callback_time": {
             "type": "string",
-            "description": "Length of the call (if available)"
+            "description": "Preferred callback time or availability"
+          },
+          "preferred_time": {
+            "type": "string",
+            "description": "Alternative parameter for callback preferences"
           },
           "vapi_call_id": {
             "type": "string",
-            "description": "VAPI call identifier (if available)"
+            "description": "VAPI call identifier for tracking"
+          },
+          "call_id": {
+            "type": "string",
+            "description": "Alternative parameter for call identifier"
+          },
+          "callId": {
+            "type": "string",
+            "description": "Alternative parameter for call identifier"
           }
         },
-        "required": ["name", "call_outcome", "interest_level"]
+        "required": ["name", "message", "call_outcome", "interest_level"]
       }
     },
     "server": {
-      "url": "https://your-n8n-domain.com/webhook/outbound-call-contact-collection",
+      "url": "https://your-n8n-domain.com/webhook/assistant-message",
       "method": "POST"
     }
   }
