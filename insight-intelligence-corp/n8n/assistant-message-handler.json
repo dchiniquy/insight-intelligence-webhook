@@ -23,6 +23,10 @@
         "values": {
           "string": [
             {
+              "name": "toolCallId",
+              "value": "={{$json.body?.message?.toolCalls?.[0]?.id || 'unknown'}}"
+            },
+            {
               "name": "caller_name",
               "value": "={{$json.body?.message?.toolCalls?.[0]?.function?.arguments?.name || $json.body?.message?.toolCalls?.[0]?.function?.arguments?.full_name || ($json.body?.message?.toolCalls?.[0]?.function?.arguments?.firstName && $json.body?.message?.toolCalls?.[0]?.function?.arguments?.lastName ? $json.body?.message?.toolCalls?.[0]?.function?.arguments?.firstName + ' ' + $json.body?.message?.toolCalls?.[0]?.function?.arguments?.lastName : $json.body?.message?.toolCalls?.[0]?.function?.arguments?.firstName) || 'Unknown Caller'}}"
             },
@@ -218,7 +222,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { status: 'success', message: 'Message sent to Don via Teams', urgency: $json.urgency, caller: $json.caller } }}",
+        "responseBody": "={{ { results: [{ toolCallId: $node['Extract Message Data'].json.toolCallId, result: 'Thank you for the information. I have sent your message to Don and he will respond promptly.' }] } }}",
         "options": {
           "responseHeaders": {
             "entries": [
