@@ -1,0 +1,215 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "check_availability",
+      "description": "Check Don's calendar availability for demo scheduling. Use this when the caller wants to schedule a demo or asks about available times. Always use this BEFORE trying to book an appointment.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Specific date to check (YYYY-MM-DD format). Optional - if not provided, checks next 7 days during business hours (9 AM - 5 PM)."
+          },
+          "requested_date": {
+            "type": "string",
+            "format": "date", 
+            "description": "Alternative parameter name for specific date requested."
+          },
+          "time_preference": {
+            "type": "string",
+            "enum": ["morning", "afternoon", "evening", "any"],
+            "description": "Time of day preference. Morning = 9 AM-12 PM, Afternoon = 12 PM-5 PM, Evening = 5 PM-8 PM. Optional - if not provided, checks all business hours."
+          },
+          "timezone": {
+            "type": "string",
+            "default": "America/Los_Angeles",
+            "description": "Timezone for the availability check. Defaults to Pacific Time."
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "default": 30,
+            "description": "Meeting duration in minutes. Defaults to 30 minutes."
+          }
+        }
+      }
+    },
+    "server": {
+      "url": "https://your-n8n-domain.com/webhook/check-availability",
+      "method": "POST"
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "book_appointment",
+      "description": "Book a confirmed appointment and create a Teams meeting. ONLY use this after the user has confirmed a specific time slot from the check_availability results. Always collect customer_name, customer_email, and appointment_datetime before using this tool.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "customer_name": {
+            "type": "string",
+            "description": "Customer's full name"
+          },
+          "customer_email": {
+            "type": "string",
+            "format": "email",
+            "description": "Customer's email address for calendar invitation"
+          },
+          "customer_phone": {
+            "type": "string",
+            "description": "Customer's phone number"
+          },
+          "company_name": {
+            "type": "string",
+            "description": "Customer's company name"
+          },
+          "appointment_datetime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Confirmed appointment date and time in ISO format (e.g., 2024-12-15T14:00:00)"
+          },
+          "timezone": {
+            "type": "string",
+            "default": "America/Los_Angeles",
+            "description": "Timezone for the appointment"
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "default": 30,
+            "description": "Meeting duration in minutes"
+          },
+          "appointment_type": {
+            "type": "string",
+            "default": "Demo",
+            "description": "Type of appointment (Demo, Consultation, etc.)"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes about the appointment or customer needs"
+          }
+        },
+        "required": ["customer_name", "customer_email", "appointment_datetime"]
+      }
+    },
+    "server": {
+      "url": "https://your-n8n-domain.com/webhook/book-appointment",
+      "method": "POST"
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "assistant_message_handler",
+      "description": "Send message to Don via Teams with urgency-based formatting. Use this for EVERY call where you collect any contact information, regardless of whether they book a demo or not. This ensures proper message delivery and follow-up.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Caller's full name"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "Caller's first name"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Caller's last name"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Caller's phone number"
+          },
+          "phone_number": {
+            "type": "string",
+            "description": "Alternative parameter for caller's phone number"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Caller's email address"
+          },
+          "email_address": {
+            "type": "string",
+            "format": "email",
+            "description": "Alternative parameter for caller's email address"
+          },
+          "company": {
+            "type": "string",
+            "description": "Caller's company name"
+          },
+          "company_name": {
+            "type": "string",
+            "description": "Alternative parameter for caller's company name"
+          },
+          "organization": {
+            "type": "string",
+            "description": "Caller's organization name"
+          },
+          "industry": {
+            "type": "string",
+            "description": "Caller's business industry or relationship type"
+          },
+          "message": {
+            "type": "string",
+            "description": "Detailed message content, conversation summary, and caller's needs"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes about the call"
+          },
+          "description": {
+            "type": "string",
+            "description": "Call description or summary"
+          },
+          "call_outcome": {
+            "type": "string",
+            "enum": ["message_taken", "appointment_scheduled", "callback_requested", "urgent_callback_requested", "appointment_requested", "technical_support", "information_provided"],
+            "description": "What happened during the call - determines message routing"
+          },
+          "interest_level": {
+            "type": "string",
+            "enum": ["urgent", "important", "routine"],
+            "description": "Urgency level for follow-up - 'urgent' triggers immediate notification, 'important' same-day, 'routine' within 24 hours"
+          },
+          "urgency": {
+            "type": "string",
+            "enum": ["urgent", "important", "routine"],
+            "description": "Alternative parameter for urgency level"
+          },
+          "next_steps": {
+            "type": "string",
+            "description": "Specific callback preferences, timing, or follow-up actions needed"
+          },
+          "callback_time": {
+            "type": "string",
+            "description": "Preferred callback time or availability"
+          },
+          "preferred_time": {
+            "type": "string",
+            "description": "Alternative parameter for callback preferences"
+          },
+          "vapi_call_id": {
+            "type": "string",
+            "description": "VAPI call identifier for tracking"
+          },
+          "call_id": {
+            "type": "string",
+            "description": "Alternative parameter for call identifier"
+          },
+          "callId": {
+            "type": "string",
+            "description": "Alternative parameter for call identifier"
+          }
+        },
+        "required": ["name", "message", "call_outcome", "interest_level"]
+      }
+    },
+    "server": {
+      "url": "https://your-n8n-domain.com/webhook/assistant-message",
+      "method": "POST"
+    }
+  }
+]

@@ -34,6 +34,77 @@ const mockTwilioWebhookData = {
     From: '+15559876543',
     To: '+15551234567',
     CallDuration: '120'
+  },
+  // Phone routing test scenarios
+  mainBusinessLine: {
+    AccountSid: 'ACfakeaccountsidfortestingpurposes',
+    ApiVersion: '2010-04-01',
+    CallSid: 'CAfakecallsidforitestingpurposesxx',
+    CallStatus: 'ringing',
+    Called: '+14805767537', // Main business line - should go direct to VAPI
+    Caller: '+15559876543',
+    Direction: 'inbound',
+    From: '+15559876543',
+    To: '+14805767537',
+  },
+  ownerLine: {
+    AccountSid: 'ACfakeaccountsidfortestingpurposes',
+    ApiVersion: '2010-04-01',
+    CallSid: 'CAfakecallsidforitestingpurposesxx',
+    CallStatus: 'ringing',
+    Called: '+15551234567', // Owner line - should forward to mobile
+    Caller: '+15559876543',
+    Direction: 'inbound',
+    From: '+15559876543',
+    To: '+15551234567',
+  },
+  unmappedNumber: {
+    AccountSid: 'ACfakeaccountsidfortestingpurposes',
+    ApiVersion: '2010-04-01',
+    CallSid: 'CAfakecallsidforitestingpurposesxx',
+    CallStatus: 'ringing',
+    Called: '+15559999999', // Unmapped - should go to default VAPI
+    Caller: '+15559876543',
+    Direction: 'inbound',
+    From: '+15559876543',
+    To: '+15559999999',
+  },
+  // Dial status callbacks
+  dialAnswered: {
+    AccountSid: 'ACfakeaccountsidfortestingpurposes',
+    ApiVersion: '2010-04-01',
+    CallSid: 'CAfakecallsidforitestingpurposesxx',
+    CallStatus: 'in-progress',
+    DialCallStatus: 'answered',
+    Called: '+15551234567',
+    Caller: '+15559876543',
+    Direction: 'inbound',
+    From: '+15559876543',
+    To: '+15551234567',
+  },
+  dialNoAnswer: {
+    AccountSid: 'ACfakeaccountsidfortestingpurposes',
+    ApiVersion: '2010-04-01',
+    CallSid: 'CAfakecallsidforitestingpurposesxx',
+    CallStatus: 'in-progress',
+    DialCallStatus: 'no-answer',
+    Called: '+15551234567',
+    Caller: '+15559876543',
+    Direction: 'inbound',
+    From: '+15559876543',
+    To: '+15551234567',
+  },
+  dialBusy: {
+    AccountSid: 'ACfakeaccountsidfortestingpurposes',
+    ApiVersion: '2010-04-01',
+    CallSid: 'CAfakecallsidforitestingpurposesxx',
+    CallStatus: 'in-progress',
+    DialCallStatus: 'busy',
+    Called: '+15551234567',
+    Caller: '+15559876543',
+    Direction: 'inbound',
+    From: '+15559876543',
+    To: '+15551234567',
   }
 };
 

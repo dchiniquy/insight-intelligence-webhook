@@ -46,6 +46,30 @@ variable "vapi_assistant_id" {
   default     = ""
 }
 
+variable "phone_routing_enabled" {
+  description = "Enable phone routing and forwarding"
+  type        = bool
+  default     = true
+}
+
+variable "phone_routing_map" {
+  description = "JSON string mapping incoming phone numbers to target numbers"
+  type        = string
+  default     = "{}"
+}
+
+variable "default_forward_timeout" {
+  description = "Default timeout in seconds for call forwarding"
+  type        = number
+  default     = 30
+}
+
+variable "vapi_fallback_enabled" {
+  description = "Enable VAPI fallback when calls are not answered"
+  type        = bool
+  default     = true
+}
+
 variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)

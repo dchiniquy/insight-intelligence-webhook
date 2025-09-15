@@ -17,6 +17,42 @@ twilio_auth_token = "your-twilio-auth-token-here"
 vapi_endpoint = "https://api.vapi.ai"
 vapi_assistant_id = "your-vapi-assistant-id-here"
 
+# Phone routing configuration
+phone_routing_enabled = true
+
+# JSON string mapping incoming numbers to routing configuration
+# Two routing options:
+# 1. Direct to VAPI: Only specify vapiAssistantId (no targetNumber)
+# 2. Forward first, then VAPI: Include targetNumber for forwarding
+phone_routing_map = jsonencode({
+  # Main business line - goes directly to VAPI (no forwarding)
+  "+14805767537" = {
+    vapiAssistantId = "498fa201-d561-4401-9f84-bfbccdf79b65"
+    description = "Main business line → Direct to VAPI"
+  }
+  
+  # Don's personal line - forwards to mobile first, then VAPI on no answer
+  "+16029609874" = {
+    targetNumber = "+15034688103"
+    requiresAnswer = true
+    maxRingTime = 22000
+    vapiAssistantId = "7198cd49-dfc0-4616-b5bc-3ed4b7fa42a1"
+    description = "Don direct line → Mobile then VAPI"
+  }
+  
+  # Demie's personal line - forwards to cell, then VAPI
+  "+16026000707" = {
+    targetNumber = "+14586002713" 
+    requiresAnswer = true
+    maxRingTime = 22000
+    vapiAssistantId = "support-assistant-id"
+    description = "Demie line → Office then VAPI"
+  }
+})
+
+default_forward_timeout = 30
+vapi_fallback_enabled = true
+
 tags = {
   Project     = "insight-intelligence-corp"
   Environment = "dev"

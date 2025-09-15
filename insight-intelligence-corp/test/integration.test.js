@@ -192,4 +192,192 @@ describe('Webhook Integration Tests', () => {
       expect(endTime - startTime).toBeLessThan(5000); // Should complete within 5 seconds
     });
   });
+
+  describe('Whisper Endpoint Tests', () => {
+    beforeEach(() => {
+      process.env = {
+        ...originalEnv,
+        PHONE_ROUTING_ENABLED: 'true',
+        PHONE_ROUTING_MAP: JSON.stringify({
+          "+16029609874": {
+            "targetNumber": "+15034688103",
+            "requiresAnswer": true,
+            "maxRingTime": 22000,
+            "vapiAssistantId": "7198cd49-dfc0-4616-b5bc-3ed4b7fa42a1",
+            "description": "Don direct line → Mobile then VAPI",
+            "whisperMessage": "Insight Intelligence Call"
+          },
+          "+16026000707": {
+            "targetNumber": "+14586002713",
+            "requiresAnswer": true,
+            "maxRingTime": 22000,
+            "vapiAssistantId": "498fa201-d561-4401-9f84-bfbccdf79b65",
+            "description": "Demie line → Office then VAPI",
+            "whisperMessage": "Business call from Demie's line"
+          },
+          "+14805767537": {
+            "vapiAssistantId": "498fa201-d561-4401-9f84-bfbccdf79b65",
+            "description": "Main business line → Direct to VAPI"
+          }
+        }),
+        VAPI_API_KEY: 'test-vapi-key',
+        TWILIO_AUTH_TOKEN: 'test-twilio-token'
+      };
+    });
+
+    it('should return correct whisper message for configured target number', async () => {
+      const whisperData = {
+        AccountSid: 'ACfakeaccountsidfortestingpurposes',
+        CallSid: 'CAfakecallsidforitestingpurposesxx',
+        From: '+15559876543', // Original caller
+        To: '+15034688103',   // Don's mobile (target number)
+        CallStatus: 'in-progress'
+      };
+
+      const body = createFormBody(whisperData);
+      const event = {
+        ...mockAPIGatewayEvent(body),
+        requestContext: {
+          ...mockAPIGatewayEvent(body).requestContext,
+          path: '/dev/whisper'
+        }
+      };
+
+      const result = await handler(event, mockContext);
+
+      expect(result.statusCode).toBe(200);
+      expect(result.headers['Content-Type']).toBe('application/xml');
+      expect(result.body).toContain('<?xml version="1.0" encoding="UTF-8"?>');
+      expect(result.body).toContain('<Response>');
+      expect(result.body).toContain('<Say voice="alice">Insight Intelligence Call</Say>');
+      expect(result.body).toContain('</Response>');
+    });
+
+    it('should return correct whisper message for second configured target number', async () => {
+      const whisperData = {
+        AccountSid: 'ACfakeaccountsidfortestingpurposes',
+        CallSid: 'CAfakecallsidforitestingpurposesxx',
+        From: '+15559876543', // Original caller
+        To: '+14586002713',   // Demie's office (target number)
+        CallStatus: 'in-progress'
+      };
+
+      const body = createFormBody(whisperData);
+      const event = {
+        ...mockAPIGatewayEvent(body),
+        requestContext: {
+          ...mockAPIGatewayEvent(body).requestContext,
+          path: '/dev/whisper'
+        }
+      };
+
+      const result = await handler(event, mockContext);
+
+      expect(result.statusCode).toBe(200);
+      expect(result.body).toContain('<Say voice="alice">Business call from Demie\'s line</Say>');
+    });
+
+    it('should fall back to default message for unconfigured target number', async () => {
+      const whisperData = {
+        AccountSid: 'ACfakeaccountsidfortestingpurposes',
+        CallSid: 'CAfakecallsidforitestingpurposesxx',
+        From: '+15559876543', // Original caller
+        To: '+15551111111',   // Unconfigured target number
+        CallStatus: 'in-progress'
+      };
+
+      const body = createFormBody(whisperData);
+      const event = {
+        ...mockAPIGatewayEvent(body),
+        requestContext: {
+          ...mockAPIGatewayEvent(body).requestContext,
+          path: '/dev/whisper'
+        }
+      };
+
+      const result = await handler(event, mockContext);
+
+      expect(result.statusCode).toBe(200);
+      expect(result.body).toContain('<Say voice="alice">Business call forwarded from +15551111111 - caller +15559876543</Say>');
+    });
+
+    it('should handle whisper request when routing is disabled', async () => {
+      process.env.PHONE_ROUTING_ENABLED = 'false';
+
+      const whisperData = {
+        AccountSid: 'ACfakeaccountsidfortestingpurposes',
+        CallSid: 'CAfakecallsidforitestingpurposesxx',
+        From: '+15559876543',
+        To: '+15034688103',
+        CallStatus: 'in-progress'
+      };
+
+      const body = createFormBody(whisperData);
+      const event = {
+        ...mockAPIGatewayEvent(body),
+        requestContext: {
+          ...mockAPIGatewayEvent(body).requestContext,
+          path: '/dev/whisper'
+        }
+      };
+
+      const result = await handler(event, mockContext);
+
+      expect(result.statusCode).toBe(200);
+      expect(result.body).toContain('<Say voice="alice">Business call forwarded from +15034688103 - caller +15559876543</Say>');
+    });
+
+    it('should handle malformed routing configuration gracefully', async () => {
+      process.env.PHONE_ROUTING_MAP = 'invalid-json';
+
+      const whisperData = {
+        AccountSid: 'ACfakeaccountsidfortestingpurposes',
+        CallSid: 'CAfakecallsidforitestingpurposesxx',
+        From: '+15559876543',
+        To: '+15034688103',
+        CallStatus: 'in-progress'
+      };
+
+      const body = createFormBody(whisperData);
+      const event = {
+        ...mockAPIGatewayEvent(body),
+        requestContext: {
+          ...mockAPIGatewayEvent(body).requestContext,
+          path: '/dev/whisper'
+        }
+      };
+
+      const result = await handler(event, mockContext);
+
+      expect(result.statusCode).toBe(200);
+      expect(result.body).toContain('Business call forwarded from');
+    });
+
+    it('should handle whisper endpoint with missing Twilio data', async () => {
+      const incompleteData = {
+        AccountSid: 'ACfakeaccountsidfortestingpurposes', // Need this for validation
+        CallSid: 'CAfakecallsidforitestingpurposesxx',
+        From: '+15559876543', // Add minimal required data
+        To: '+15034688103'
+        // Other fields can be missing
+      };
+
+      const body = createFormBody(incompleteData);
+      const event = {
+        ...mockAPIGatewayEvent(body),
+        requestContext: {
+          ...mockAPIGatewayEvent(body).requestContext,
+          path: '/dev/whisper'
+        }
+      };
+
+      const result = await handler(event, mockContext);
+
+      // Should still return valid TwiML even with minimal data
+      expect(result.statusCode).toBe(200);
+      expect(result.headers['Content-Type']).toBe('application/xml');
+      expect(result.body).toContain('<Response>');
+      expect(result.body).toContain('<Say voice="alice">');
+    });
+  });
 });

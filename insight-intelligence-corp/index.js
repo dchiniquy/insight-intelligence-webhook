@@ -1,6 +1,9 @@
 const twilio = require('twilio');
 const axios = require('axios');
 
+// Global state to track call status (in production, use database)
+const callStatusMap = new Map();
+
 exports.handler = async (event) => {
     console.log('Received Twilio webhook request');
     
@@ -27,9 +30,13 @@ exports.handler = async (event) => {
         const params = new URLSearchParams(body);
         const twilioData = Object.fromEntries(params);
         
+        // Check if this is a whisper endpoint request
+        if (event.requestContext.path && event.requestContext.path.endsWith('/whisper')) {
+            return generateWhisperResponse(twilioData);
+        }
         
         // Process different Twilio webhook types
-        const response = await processTwilioWebhook(twilioData);
+        const response = await processTwilioWebhook(twilioData, event);
         
         return {
             statusCode: 200,
@@ -171,12 +178,135 @@ function validateTwilioRequest(body, signature, url, event) {
     return true;
 }
 
-async function processTwilioWebhook(data) {
-    const { CallStatus, From, To, CallSid } = data;
+/**
+ * Get routing configuration for an incoming phone number
+ * 
+ * @param {string} incomingNumber - The phone number being called (To field)
+ * @returns {Object|null} - Routing configuration or null if no mapping
+ */
+function getRoutingConfig(incomingNumber) {
+    const routingEnabled = process.env.PHONE_ROUTING_ENABLED === 'true';
+    if (!routingEnabled) {
+        console.log('Phone routing disabled - using VAPI for all calls');
+        return null;
+    }
+
+    const routingMapString = process.env.PHONE_ROUTING_MAP || '{}';
+    let routingMap;
+    
+    try {
+        routingMap = JSON.parse(routingMapString);
+    } catch (error) {
+        console.error('Error parsing PHONE_ROUTING_MAP:', error);
+        return null;
+    }
+
+    const config = routingMap[incomingNumber];
+    if (!config) {
+        console.log(`No routing configuration found for ${incomingNumber} - using VAPI`);
+        return null;
+    }
+
+    // Set defaults for missing fields
+    const routingConfig = {
+        targetNumber: config.targetNumber,
+        requiresAnswer: config.requiresAnswer !== false, // Default to true
+        vapiAssistantId: config.vapiAssistantId || process.env.VAPI_ASSISTANT_ID,
+        maxRingTime: config.maxRingTime || (parseInt(process.env.DEFAULT_FORWARD_TIMEOUT) * 1000) || 30000,
+        description: config.description || `Forward ${incomingNumber} → ${config.targetNumber}`
+    };
+
+    console.log(`Routing config for ${incomingNumber}:`, routingConfig);
+    return routingConfig;
+}
+
+/**
+ * Find routing configuration by target number (reverse lookup)
+ * Used for whisper calls where we have the mobile number, not the business number
+ * 
+ * @param {string} targetNumber - The mobile/target number to find routing config for
+ * @returns {Object|null} - Routing configuration object or null
+ */
+function findRoutingConfigByTarget(targetNumber) {
+    const routingEnabled = process.env.PHONE_ROUTING_ENABLED === 'true';
+    if (!routingEnabled) {
+        console.log('Phone routing disabled - no routing config available for whisper');
+        return null;
+    }
+
+    const routingMapString = process.env.PHONE_ROUTING_MAP || '{}';
+    let routingMap;
+    
+    try {
+        routingMap = JSON.parse(routingMapString);
+    } catch (error) {
+        console.error('Error parsing PHONE_ROUTING_MAP for whisper:', error);
+        return null;
+    }
+
+    // Search through all routing configs to find one with matching targetNumber
+    for (const [businessNumber, config] of Object.entries(routingMap)) {
+        if (config.targetNumber === targetNumber) {
+            console.log(`Found routing config for target ${targetNumber}: business number ${businessNumber}`);
+            // Include the whisperMessage in the returned config
+            return {
+                ...config,
+                businessNumber: businessNumber
+            };
+        }
+    }
+    
+    console.log(`No routing configuration found for target number ${targetNumber}`);
+    return null;
+}
+
+/**
+ * Generate TwiML to forward call to target number with timeout
+ * 
+ * @param {Object} twilioData - Twilio webhook data
+ * @param {Object} routingConfig - Routing configuration
+ * @param {string} webhookUrl - Base webhook URL for status callbacks
+ * @returns {string} - TwiML response
+ */
+function forwardCall(twilioData, routingConfig, webhookUrl, baseUrl) {
+    const { CallSid } = twilioData;
+    const timeoutSeconds = Math.floor(routingConfig.maxRingTime / 1000);
+
+    // Store call routing info for status tracking
+    callStatusMap.set(CallSid, {
+        routingConfig: routingConfig,
+        startTime: Date.now(),
+        status: 'forwarding',
+        originalCaller: twilioData.From
+    });
+
+    console.log(`Forwarding call ${CallSid} to ${routingConfig.targetNumber} with ${timeoutSeconds}s timeout`);
+
+    const whisperUrl = `${baseUrl}/dev/whisper`;
+    console.log(`Whisper URL: ${whisperUrl}`);
+    
+    const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Dial timeout="${timeoutSeconds}" action="${webhookUrl}" method="POST" callerId="${twilioData.From}">
+        <Number url="${whisperUrl}">${routingConfig.targetNumber}</Number>
+    </Dial>
+    <Say voice="alice">I'm sorry, but no one is available to take your call right now. Please hold while I connect you to our AI assistant who can help you.</Say>
+</Response>`;
+
+    return twiml;
+}
+
+async function processTwilioWebhook(data, event) {
+    const { CallStatus, From, To, CallSid, DialCallStatus } = data;
+    
+    // Check if this is a dial status callback (from forwarded call)
+    if (DialCallStatus) {
+        return await handleDialStatus(data);
+    }
     
     switch (CallStatus) {
         case 'ringing':
-            return await handleIncomingCall(data);
+            return await handleIncomingCall(data, event);
         case 'answered':
             return await handleCallAnswered(data);
         case 'completed':
@@ -186,16 +316,89 @@ async function processTwilioWebhook(data) {
     }
 }
 
-async function handleIncomingCall(data) {
+/**
+ * Handle dial status callbacks from forwarded calls
+ * 
+ * @param {Object} data - Twilio webhook data with DialCallStatus
+ * @returns {string} - TwiML response
+ */
+async function handleDialStatus(data) {
+    const { CallSid, DialCallStatus } = data;
+    const callInfo = callStatusMap.get(CallSid);
+    
+    console.log(`Dial status for ${CallSid}: ${DialCallStatus}`);
+    
+    if (!callInfo) {
+        console.log(`No call info found for ${CallSid} - generating empty response`);
+        return generateTwiMLResponse('');
+    }
+
+    switch (DialCallStatus) {
+        case 'answered':
+            console.log(`Call ${CallSid} was answered by target number`);
+            callStatusMap.set(CallSid, { ...callInfo, status: 'answered' });
+            // Call was answered - no further action needed
+            return generateTwiMLResponse('');
+
+        case 'no-answer':
+        case 'busy':
+        case 'failed':
+            console.log(`Call ${CallSid} not answered (${DialCallStatus}) - transferring to VAPI`);
+            
+            // Check if VAPI fallback is enabled
+            if (process.env.VAPI_FALLBACK_ENABLED !== 'true') {
+                console.log('VAPI fallback disabled - ending call');
+                return generateTwiMLResponse('<Hangup/>');
+            }
+
+            // Transfer to VAPI
+            try {
+                const vapiCall = await createVAPICall(data, callInfo.routingConfig);
+                callStatusMap.set(CallSid, { ...callInfo, status: 'transferred_to_vapi' });
+                return vapiCall.twiml;
+            } catch (error) {
+                console.error('Error transferring to VAPI:', error);
+                return generateTwiMLResponse(`
+                    <Say>I apologize, but we're experiencing technical difficulties. Please try calling again later.</Say>
+                    <Hangup/>
+                `);
+            }
+
+        default:
+            console.log(`Unknown dial status: ${DialCallStatus}`);
+            return generateTwiMLResponse('');
+    }
+}
+
+async function handleIncomingCall(data, event) {
+    const { To, From, CallSid } = data;
+    
     try {
-        // Create VAPI call using the correct API approach
-        const vapiCall = await createVAPICall(data);
+        console.log(`Incoming call: ${From} → ${To} (${CallSid})`);
         
-        // Return the TwiML provided by VAPI
-        return vapiCall.twiml;
+        // Check if routing is configured for this number
+        const routingConfig = getRoutingConfig(To);
+        
+        if (routingConfig && routingConfig.targetNumber) {
+            // Forward call to target number
+            const baseUrl = `https://${event.requestContext.domainName}`;
+            const webhookUrl = `${baseUrl}${event.requestContext.path}`;
+            console.log(`Using routing config - forwarding to ${routingConfig.targetNumber}`);
+            return forwardCall(data, routingConfig, webhookUrl, baseUrl);
+        } else if (routingConfig) {
+            // Routing config exists but no targetNumber - direct to VAPI with specific assistant
+            console.log(`Using routing config - direct to VAPI with assistant ${routingConfig.vapiAssistantId}`);
+            const vapiCall = await createVAPICall(data, routingConfig);
+            return vapiCall.twiml;
+        } else {
+            // No routing configured - use VAPI directly with defaults
+            console.log('No routing config - using VAPI directly with defaults');
+            const vapiCall = await createVAPICall(data);
+            return vapiCall.twiml;
+        }
         
     } catch (error) {
-        console.error('Error creating VAPI call:', error);
+        console.error('Error handling incoming call:', error);
         
         return generateTwiMLResponse(`
             <Say>Sorry, we're experiencing technical difficulties. Please try again later.</Say>
@@ -204,11 +407,13 @@ async function handleIncomingCall(data) {
     }
 }
 
-async function createVAPICall(twilioData) {
+async function createVAPICall(twilioData, routingConfig = null) {
     const { From, To } = twilioData;
     const VAPI_API_KEY = process.env.VAPI_API_KEY;
     const VAPI_ENDPOINT = process.env.VAPI_ENDPOINT;
-    const VAPI_ASSISTANT_ID = process.env.VAPI_ASSISTANT_ID;
+    
+    // Use routing config assistant ID if available, otherwise default
+    const VAPI_ASSISTANT_ID = routingConfig?.vapiAssistantId || process.env.VAPI_ASSISTANT_ID;
     
     const vapiPayload = {
         phoneCallProviderBypassEnabled: true,
@@ -254,6 +459,14 @@ async function handleCallAnswered(data) {
 async function handleCallCompleted(data) {
     await logCallEvent(data, 'completed');
     await endVAPICall(data.CallSid);
+    
+    // Clean up call status tracking
+    const { CallSid } = data;
+    if (callStatusMap.has(CallSid)) {
+        console.log(`Cleaning up call status for ${CallSid}`);
+        callStatusMap.delete(CallSid);
+    }
+    
     return generateTwiMLResponse('');
 }
 
@@ -294,4 +507,47 @@ function generateTwiMLResponse(content) {
 <Response>
     ${content}
 </Response>`;
+}
+
+/**
+ * Generate whisper response for call screening
+ * 
+ * @param {Object} twilioData - Twilio webhook data
+ * @param {Object} event - Lambda event object
+ * @returns {Object} - HTTP response with TwiML
+ */
+function generateWhisperResponse(twilioData) {
+    const { From, To } = twilioData;
+    
+    // For whisper calls, To is the mobile number, not the business number
+    // We need to find which business number forwards to this mobile number
+    const routingConfig = findRoutingConfigByTarget(To);
+    
+    let whisperMessage = `Call from ${From}`;
+    
+    if (routingConfig && routingConfig.whisperMessage) {
+        whisperMessage = routingConfig.whisperMessage;
+    } else if (routingConfig && routingConfig.description) {
+        whisperMessage = `${routingConfig.description}: Call from ${From}`;
+    } else {
+        whisperMessage = `Business call forwarded from ${To} - caller ${From}`;
+    }
+    
+    console.log(`Generating whisper for ${To}: "${whisperMessage}"`);
+    console.log(`Routing config found:`, JSON.stringify(routingConfig, null, 2));
+    
+    const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say voice="alice">${whisperMessage}</Say>
+</Response>`;
+    
+    console.log(`Whisper TwiML:`, twiml);
+    
+    return {
+        statusCode: 200,
+        headers: {
+            'Content-Type': 'application/xml'
+        },
+        body: twiml
+    };
 }

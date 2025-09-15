@@ -1,0 +1,341 @@
+{
+  "name": "Assistant-message-handler",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "assistant-message",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "9fcfd86c-046f-4100-805b-04612f2b7eb6",
+      "name": "Assistant Message Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        176
+      ],
+      "webhookId": "auto-generated"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "caller_name",
+              "value": "={{$json.function?.parameters?.name || $json.function?.parameters?.full_name || ($json.function?.parameters?.firstName && $json.function?.parameters?.lastName ? $json.function?.parameters?.firstName + ' ' + $json.function?.parameters?.lastName : $json.function?.parameters?.firstName) || 'Unknown Caller'}}"
+            },
+            {
+              "name": "firstName",
+              "value": "={{$json.function?.parameters?.firstName || ($json.function?.parameters?.name ? $json.function?.parameters?.name.trim().split(' ')[0] : 'Unknown')}}"
+            },
+            {
+              "name": "lastName",
+              "value": "={{$json.function?.parameters?.lastName || ($json.function?.parameters?.name && $json.function?.parameters?.name.trim().split(' ').length > 1 ? $json.function?.parameters?.name.trim().split(' ').slice(1).join(' ') : 'Caller')}}"
+            },
+            {
+              "name": "phone_number",
+              "value": "={{$json.function?.parameters?.phone || $json.function?.parameters?.phone_number || $json.function?.parameters?.phoneNumber || 'Not provided'}}"
+            },
+            {
+              "name": "email_address",
+              "value": "={{$json.function?.parameters?.email || $json.function?.parameters?.email_address || 'Not provided'}}"
+            },
+            {
+              "name": "company_name",
+              "value": "={{$json.function?.parameters?.company || $json.function?.parameters?.company_name || $json.function?.parameters?.organization || 'Not provided'}}"
+            },
+            {
+              "name": "message_content",
+              "value": "={{$json.function?.parameters?.message || $json.function?.parameters?.notes || $json.function?.parameters?.description || 'No specific message provided'}}"
+            },
+            {
+              "name": "urgency_level",
+              "value": "={{$json.function?.parameters?.interest_level || $json.function?.parameters?.urgency || 'routine'}}"
+            },
+            {
+              "name": "call_outcome",
+              "value": "={{$json.function?.parameters?.call_outcome || 'message_taken'}}"
+            },
+            {
+              "name": "callback_preference",
+              "value": "={{$json.function?.parameters?.next_steps || $json.function?.parameters?.callback_time || $json.function?.parameters?.preferred_time || 'At your convenience'}}"
+            },
+            {
+              "name": "vapi_call_id",
+              "value": "={{$json.function?.parameters?.vapi_call_id || $json.function?.parameters?.call_id || $json.function?.parameters?.callId || 'Unknown'}}"
+            },
+            {
+              "name": "message_time",
+              "value": "={{DateTime.now().toISO()}}"
+            },
+            {
+              "name": "relationship_type",
+              "value": "={{$json.function?.parameters?.industry || $json.function?.parameters?.relationship || $json.function?.parameters?.caller_type || 'Unknown relationship'}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a853e406-f89e-4d5d-a602-2f7ff62ab8cd",
+      "name": "Extract Message Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        144,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "urgent-check",
+              "leftValue": "={{$json.urgency_level}}",
+              "rightValue": "urgent",
+              "operator": {
+                "type": "string",
+                "operation": "equal"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "6e014c75-3d17-4a29-a9ae-c2bd4542bf0e",
+      "name": "Check If Urgent",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        384,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format urgent Teams message\nconst data = $input.first().json;\n\n// Format timestamp for readability\nconst messageTime = new Date(data.message_time).toLocaleString('en-US', {\n  weekday: 'short',\n  month: 'short', \n  day: 'numeric',\n  hour: 'numeric',\n  minute: '2-digit',\n  hour12: true\n});\n\n// Create urgent Teams message\nconst urgentMessage = `🔴 **URGENT MESSAGE from Assistant**\\n\\n` +\n  `📞 **${data.caller_name}** called at ${messageTime}\\n` +\n  `🏢 **Company:** ${data.company_name}\\n` +\n  `📱 **Phone:** ${data.phone_number}\\n` +\n  `📧 **Email:** ${data.email_address}\\n\\n` +\n  `💬 **Message:** ${data.message_content}\\n\\n` +\n  `⏰ **Callback needed:** ${data.callback_preference}\\n` +\n  `🆔 **Call ID:** ${data.vapi_call_id}\\n\\n` +\n  `⚠️ **This caller expects a response within 1 hour!**`;\n\nreturn {\n  json: {\n    message: urgentMessage,\n    urgency: 'urgent',\n    caller: data.caller_name,\n    phone: data.phone_number\n  }\n};"
+      },
+      "id": "64bd87a2-5dd1-425d-8fa3-7187b6394426",
+      "name": "Format Urgent Teams Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format routine Teams message\nconst data = $input.first().json;\n\n// Format timestamp for readability  \nconst messageTime = new Date(data.message_time).toLocaleString('en-US', {\n  weekday: 'short',\n  month: 'short',\n  day: 'numeric', \n  hour: 'numeric',\n  minute: '2-digit',\n  hour12: true\n});\n\n// Determine priority emoji based on call outcome\nlet priorityEmoji = '📝';\nif (data.call_outcome === 'callback_requested') priorityEmoji = '📞';\nif (data.call_outcome === 'appointment_requested') priorityEmoji = '📅';\nif (data.urgency_level === 'important') priorityEmoji = '🔵';\n\n// Create routine Teams message\nconst routineMessage = `${priorityEmoji} **Message from Assistant**\\n\\n` +\n  `📞 **${data.caller_name}** called at ${messageTime}\\n` +\n  `🏢 **Company:** ${data.company_name}\\n` +\n  `📱 **Phone:** ${data.phone_number}\\n` +\n  `📧 **Email:** ${data.email_address}\\n\\n` +\n  `💬 **Message:** ${data.message_content}\\n\\n` +\n  `📋 **Call outcome:** ${data.call_outcome}\\n` +\n  `⏰ **Callback preference:** ${data.callback_preference}\\n` +\n  `🆔 **Call ID:** ${data.vapi_call_id}\\n\\n` +\n  `${data.urgency_level === 'important' ? '🔵 **Follow up same day**' : '📅 **Follow up within 24 hours**'}`;\n\nreturn {\n  json: {\n    message: routineMessage,\n    urgency: data.urgency_level,\n    caller: data.caller_name,\n    phone: data.phone_number\n  }\n};"
+      },
+      "id": "c208040c-cd10-4133-9470-cfe3fc41b28f",
+      "name": "Format Routine Teams Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "channelMessage",
+        "teamId": {
+          "__rl": true,
+          "value": "e76a435a-6314-476e-8803-85e4cf699eb1",
+          "mode": "list",
+          "cachedResultName": "Insight Intelligence"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "19:996a896977f744cb8121e352eeaaca79@thread.tacv2",
+          "mode": "list",
+          "cachedResultName": "Don Messages",
+          "cachedResultUrl": "https://teams.cloud.microsoft/l/channel/19%3A996a896977f744cb8121e352eeaaca79%40thread.tacv2/Don%20Messages?groupId=e76a435a-6314-476e-8803-85e4cf699eb1&tenantId=097d9d4d-43df-4a2c-88d6-b61de0ce4a41&allowXTenantAccess=True&ngc=True"
+        },
+        "message": "={{$json.message}}",
+        "options": {}
+      },
+      "id": "3352d667-a2f4-45eb-8552-d23f457608c3",
+      "name": "Send Urgent Teams Message",
+      "type": "n8n-nodes-base.microsoftTeams",
+      "typeVersion": 2,
+      "position": [
+        864,
+        16
+      ],
+      "webhookId": "330f8795-c8c9-4769-8dd1-e2706653a756",
+      "credentials": {
+        "microsoftTeamsOAuth2Api": {
+          "id": "6pTc2hJVUNyTyOzc",
+          "name": "Microsoft Teams account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "channelMessage",
+        "teamId": {
+          "__rl": true,
+          "value": "e76a435a-6314-476e-8803-85e4cf699eb1",
+          "mode": "list",
+          "cachedResultName": "Insight Intelligence"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "19:996a896977f744cb8121e352eeaaca79@thread.tacv2",
+          "mode": "list",
+          "cachedResultName": "Don Messages",
+          "cachedResultUrl": "https://teams.cloud.microsoft/l/channel/19%3A996a896977f744cb8121e352eeaaca79%40thread.tacv2/Don%20Messages?groupId=e76a435a-6314-476e-8803-85e4cf699eb1&tenantId=097d9d4d-43df-4a2c-88d6-b61de0ce4a41&allowXTenantAccess=True&ngc=True"
+        },
+        "message": "={{$json.message}}",
+        "options": {}
+      },
+      "id": "c5cb2375-d8ca-462f-93f3-5ae49a39b857",
+      "name": "Send Routine Teams Message",
+      "type": "n8n-nodes-base.microsoftTeams",
+      "typeVersion": 2,
+      "position": [
+        864,
+        336
+      ],
+      "webhookId": "42c75307-a915-4d01-929d-b88479811017",
+      "credentials": {
+        "microsoftTeamsOAuth2Api": {
+          "id": "6pTc2hJVUNyTyOzc",
+          "name": "Microsoft Teams account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { status: 'success', message: 'Message sent to Don via Teams', urgency: $json.urgency, caller: $json.caller } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "474d8deb-0aa9-478e-92e6-2682de5d05fe",
+      "name": "Send Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1104,
+        176
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Assistant Message Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Message Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Message Data": {
+      "main": [
+        [
+          {
+            "node": "Check If Urgent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Urgent": {
+      "main": [
+        [
+          {
+            "node": "Format Urgent Teams Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Routine Teams Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Urgent Teams Message": {
+      "main": [
+        [
+          {
+            "node": "Send Urgent Teams Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Routine Teams Message": {
+      "main": [
+        [
+          {
+            "node": "Send Routine Teams Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Urgent Teams Message": {
+      "main": [
+        [
+          {
+            "node": "Send Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Routine Teams Message": {
+      "main": [
+        [
+          {
+            "node": "Send Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "00516573-ec3e-498d-bf1c-c1578928af91",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "99aaeba6b75257ee350bb8eb8800a228cb7b97e21f9b2e1e88ec25277f30b9a0"
+  },
+  "id": "fbwUUeR1fEDHPCVl",
+  "tags": []
+}

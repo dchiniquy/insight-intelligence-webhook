@@ -77,10 +77,14 @@ resource "aws_lambda_function" "webhook" {
 
   environment {
     variables = {
-      VAPI_API_KEY      = local.secrets["VAPI-API-Key"]
-      VAPI_ENDPOINT     = var.vapi_endpoint
-      VAPI_ASSISTANT_ID = local.secrets["VAPI-Assistant-Id"]
-      TWILIO_AUTH_TOKEN = local.secrets["Twilio-Auth-Token"]
+      VAPI_API_KEY             = local.secrets["VAPI-API-Key"]
+      VAPI_ENDPOINT            = var.vapi_endpoint
+      VAPI_ASSISTANT_ID        = local.secrets["VAPI-Assistant-Id"]
+      TWILIO_AUTH_TOKEN        = local.secrets["Twilio-Auth-Token"]
+      PHONE_ROUTING_ENABLED    = tostring(var.phone_routing_enabled)
+      PHONE_ROUTING_MAP        = var.phone_routing_map
+      DEFAULT_FORWARD_TIMEOUT  = tostring(var.default_forward_timeout)
+      VAPI_FALLBACK_ENABLED    = tostring(var.vapi_fallback_enabled)
     }
   }
 
@@ -104,10 +108,25 @@ resource "aws_api_gateway_resource" "webhook" {
   path_part   = "webhook"
 }
 
+# API Gateway Resource for Whisper endpoint
+resource "aws_api_gateway_resource" "whisper" {
+  rest_api_id = aws_api_gateway_rest_api.webhook.id
+  parent_id   = aws_api_gateway_rest_api.webhook.root_resource_id
+  path_part   = "whisper"
+}
+
 # API Gateway Method
 resource "aws_api_gateway_method" "webhook_post" {
   rest_api_id   = aws_api_gateway_rest_api.webhook.id
   resource_id   = aws_api_gateway_resource.webhook.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
+# API Gateway Method for Whisper endpoint
+resource "aws_api_gateway_method" "whisper_post" {
+  rest_api_id   = aws_api_gateway_rest_api.webhook.id
+  resource_id   = aws_api_gateway_resource.whisper.id
   http_method   = "POST"
   authorization = "NONE"
 }
@@ -117,6 +136,17 @@ resource "aws_api_gateway_integration" "webhook_lambda" {
   rest_api_id = aws_api_gateway_rest_api.webhook.id
   resource_id = aws_api_gateway_resource.webhook.id
   http_method = aws_api_gateway_method.webhook_post.http_method
+
+  integration_http_method = "POST"
+  type                   = "AWS_PROXY"
+  uri                    = aws_lambda_function.webhook.invoke_arn
+}
+
+# API Gateway Integration for Whisper endpoint
+resource "aws_api_gateway_integration" "whisper_lambda" {
+  rest_api_id = aws_api_gateway_rest_api.webhook.id
+  resource_id = aws_api_gateway_resource.whisper.id
+  http_method = aws_api_gateway_method.whisper_post.http_method
 
   integration_http_method = "POST"
   type                   = "AWS_PROXY"
@@ -137,6 +167,8 @@ resource "aws_api_gateway_deployment" "webhook" {
   depends_on = [
     aws_api_gateway_method.webhook_post,
     aws_api_gateway_integration.webhook_lambda,
+    aws_api_gateway_method.whisper_post,
+    aws_api_gateway_integration.whisper_lambda,
   ]
 
   rest_api_id = aws_api_gateway_rest_api.webhook.id
@@ -146,6 +178,9 @@ resource "aws_api_gateway_deployment" "webhook" {
       aws_api_gateway_resource.webhook.id,
       aws_api_gateway_method.webhook_post.id,
       aws_api_gateway_integration.webhook_lambda.id,
+      aws_api_gateway_resource.whisper.id,
+      aws_api_gateway_method.whisper_post.id,
+      aws_api_gateway_integration.whisper_lambda.id,
     ]))
   }
 
