@@ -23,52 +23,56 @@
         "values": {
           "string": [
             {
+              "name": "toolCallId",
+              "value": "={{$json.body?.message?.toolCalls?.[0]?.id || 'unknown'}}"
+            },
+            {
               "name": "customer_name",
-              "value": "={{$json.body.customer_name || $json.body.name || $json.body.full_name || ($json.body.firstName && $json.body.lastName ? $json.body.firstName + ' ' + $json.body.lastName : 'Name from call')}}"
+              "value": "={{$json.body?.message?.toolCalls?.[0]?.function?.arguments?.customer_name || $json.body?.message?.toolCalls?.[0]?.function?.arguments?.name || $json.body?.message?.toolCalls?.[0]?.function?.arguments?.full_name || $json.body.customer_name || $json.body.name || $json.body.full_name || ($json.body.firstName && $json.body.lastName ? $json.body.firstName + ' ' + $json.body.lastName : 'Name from call')}}"
             },
             {
               "name": "firstName",
-              "value": "={{$json.body.firstName || ($json.body.customer_name ? $json.body.customer_name.trim().split(' ')[0] : ($json.body.name ? $json.body.name.trim().split(' ')[0] : 'Customer'))}}"
+              "value": "={{$json.body?.message?.toolCalls?.[0]?.function?.arguments?.firstName || $json.body.firstName || ($json.body.customer_name ? $json.body.customer_name.trim().split(' ')[0] : ($json.body.name ? $json.body.name.trim().split(' ')[0] : 'Customer'))}}"
             },
             {
               "name": "lastName",
-              "value": "={{$json.body.lastName || ($json.body.customer_name && $json.body.customer_name.trim().split(' ').length > 1 ? $json.body.customer_name.trim().split(' ').slice(1).join(' ') : ($json.body.name && $json.body.name.trim().split(' ').length > 1 ? $json.body.name.trim().split(' ').slice(1).join(' ') : 'Lead'))}}"
+              "value": "={{$json.body?.message?.toolCalls?.[0]?.function?.arguments?.lastName || $json.body.lastName || ($json.body.customer_name && $json.body.customer_name.trim().split(' ').length > 1 ? $json.body.customer_name.trim().split(' ').slice(1).join(' ') : ($json.body.name && $json.body.name.trim().split(' ').length > 1 ? $json.body.name.trim().split(' ').slice(1).join(' ') : 'Lead'))}}"
             },
             {
               "name": "customer_email",
-              "value": "={{$json.body.customer_email || $json.body.email || $json.body.email_address || ''}}"
+              "value": "={{$json.body?.message?.toolCalls?.[0]?.function?.arguments?.customer_email || $json.body?.message?.toolCalls?.[0]?.function?.arguments?.email || $json.body.customer_email || $json.body.email || $json.body.email_address || ''}}"
             },
             {
               "name": "customer_phone",
-              "value": "={{$json.body.customer_phone || $json.body.phone || $json.body.phone_number || $json.body.phoneNumber || ''}}"
+              "value": "={{$json.body?.message?.toolCalls?.[0]?.function?.arguments?.customer_phone || $json.body?.message?.toolCalls?.[0]?.function?.arguments?.phone || $json.body.customer_phone || $json.body.phone || $json.body.phone_number || $json.body.phoneNumber || ''}}"
             },
             {
               "name": "company_name",
-              "value": "={{$json.body.company_name || $json.body.company || $json.body.organization || $json.body.business_name || ''}}"
+              "value": "={{$json.body?.message?.toolCalls?.[0]?.function?.arguments?.company_name || $json.body?.message?.toolCalls?.[0]?.function?.arguments?.company || $json.body.company_name || $json.body.company || $json.body.organization || $json.body.business_name || ''}}"
             },
             {
               "name": "appointment_datetime",
-              "value": "={{$json.body.appointment_datetime || $json.body.datetime || $json.body.start_time || ''}}"
+              "value": "={{$json.body?.message?.toolCalls?.[0]?.function?.arguments?.appointment_datetime || $json.body?.message?.toolCalls?.[0]?.function?.arguments?.datetime || $json.body.appointment_datetime || $json.body.datetime || $json.body.start_time || ''}}"
             },
             {
               "name": "timezone",
-              "value": "={{$json.body.timezone || $json.body.time_zone || 'America/Los_Angeles'}}"
+              "value": "={{$json.body?.message?.toolCalls?.[0]?.function?.arguments?.timezone || $json.body.timezone || $json.body.time_zone || 'America/Los_Angeles'}}"
             },
             {
               "name": "duration_minutes",
-              "value": "={{$json.body.duration_minutes || $json.body.duration || 30}}"
+              "value": "={{$json.body?.message?.toolCalls?.[0]?.function?.arguments?.duration_minutes || $json.body?.message?.toolCalls?.[0]?.function?.arguments?.duration || $json.body.duration_minutes || $json.body.duration || 30}}"
             },
             {
               "name": "appointment_type",
-              "value": "={{$json.body.appointment_type || $json.body.type || $json.body.meeting_type || 'Demo'}}"
+              "value": "={{$json.body?.message?.toolCalls?.[0]?.function?.arguments?.appointment_type || $json.body?.message?.toolCalls?.[0]?.function?.arguments?.type || $json.body.appointment_type || $json.body.type || $json.body.meeting_type || 'Demo'}}"
             },
             {
               "name": "notes",
-              "value": "={{$json.body.notes || $json.body.message || $json.body.description || $json.body.comments || 'Appointment booked via VAPI'}}"
+              "value": "={{$json.body?.message?.toolCalls?.[0]?.function?.arguments?.notes || $json.body?.message?.toolCalls?.[0]?.function?.arguments?.message || $json.body.notes || $json.body.message || $json.body.description || $json.body.comments || 'Appointment booked via VAPI'}}"
             },
             {
               "name": "vapi_call_id",
-              "value": "={{$json.body.vapi_call_id || $json.body.call_id || $json.body.callId || 'Unknown'}}"
+              "value": "={{$json.body?.message?.toolCalls?.[0]?.function?.arguments?.vapi_call_id || $json.body?.message?.toolCalls?.[0]?.function?.arguments?.call_id || $json.body.vapi_call_id || $json.body.call_id || $json.body.callId || 'Unknown'}}"
             },
             {
               "name": "booking_time",
@@ -143,7 +147,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Return validation error response\nconst bookingData = $('Extract Booking Data').first().json;\n\nconst missingFields = [];\nif (!bookingData.customer_name || bookingData.customer_name === 'Name from call') {\n  missingFields.push('customer_name');\n}\nif (!bookingData.customer_email) {\n  missingFields.push('customer_email');\n}\nif (!bookingData.appointment_datetime) {\n  missingFields.push('appointment_datetime');\n}\n\nconst errorResponse = {\n  status: 'error',\n  message: `Missing required booking information: ${missingFields.join(', ')}`,\n  missing_fields: missingFields,\n  provided_data: {\n    customer_name: bookingData.customer_name,\n    customer_email: bookingData.customer_email || 'not provided',\n    appointment_datetime: bookingData.appointment_datetime || 'not provided'\n  },\n  conversation_context: {\n    suggested_response: `I need a few more details to book your appointment. Could you provide ${missingFields.includes('customer_name') ? 'your name' : ''}${missingFields.includes('customer_email') ? (missingFields.includes('customer_name') ? ' and email address' : 'your email address') : ''}${missingFields.includes('appointment_datetime') ? ' and your preferred appointment time' : ''}?`,\n    required_fields: missingFields,\n    next_action: 'collect_missing_information'\n  }\n};\n\nreturn { json: errorResponse };"
+        "jsCode": "// Return VAPI tool function validation error response\nconst bookingData = $('Extract Booking Data').first().json;\nconst toolCallId = bookingData.toolCallId;\n\nconst missingFields = [];\nif (!bookingData.customer_name || bookingData.customer_name === 'Name from call') {\n  missingFields.push('customer_name');\n}\nif (!bookingData.customer_email) {\n  missingFields.push('customer_email');\n}\nif (!bookingData.appointment_datetime) {\n  missingFields.push('appointment_datetime');\n}\n\nconst resultMessage = `I need a few more details to book your appointment. Could you provide ${missingFields.includes('customer_name') ? 'your name' : ''}${missingFields.includes('customer_email') ? (missingFields.includes('customer_name') ? ' and email address' : 'your email address') : ''}${missingFields.includes('appointment_datetime') ? ' and your preferred appointment time' : ''}?`;\n\nconst errorResponse = {\n  results: [{\n    toolCallId: toolCallId,\n    result: resultMessage\n  }]\n};\n\nreturn { json: errorResponse };"
       },
       "id": "3e452c20-9335-4600-911b-36d0e252ffe9",
       "name": "Format Validation Error",
@@ -159,11 +163,16 @@
         "respondWith": "json",
         "responseBody": "={{$json}}",
         "options": {
+          "responseCode": 200,
           "responseHeaders": {
             "entries": [
               {
                 "name": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
               }
             ]
           }
@@ -180,7 +189,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Prepare meeting data for Microsoft Graph API\nconst bookingData = $('Extract Booking Data').first().json;\n\n// Validate and parse datetime\nconst appointmentDateTime = new Date(bookingData.appointment_datetime);\nif (isNaN(appointmentDateTime.getTime())) {\n  throw new Error(`Invalid appointment_datetime format: ${bookingData.appointment_datetime}`);\n}\n\n// Calculate end time\nconst durationMinutes = parseInt(bookingData.duration_minutes) || 30;\nconst endDateTime = new Date(appointmentDateTime.getTime() + (durationMinutes * 60000));\n\n// Create meeting subject\nconst subject = `${bookingData.appointment_type} Call - ${bookingData.firstName} ${bookingData.lastName}${bookingData.company_name ? ` (${bookingData.company_name})` : ''}`;\n\n// Create meeting body\nconst bodyContent = `<p><strong>${bookingData.appointment_type} call with ${bookingData.customer_name}</strong></p>\n${bookingData.company_name ? `<p><strong>Company:</strong> ${bookingData.company_name}</p>` : ''}\n<p><strong>Phone:</strong> ${bookingData.customer_phone || 'Not provided'}</p>\n<p><strong>Email:</strong> ${bookingData.customer_email}</p>\n<p><strong>VAPI Call ID:</strong> ${bookingData.vapi_call_id}</p>\n${bookingData.notes ? `<p><strong>Notes:</strong> ${bookingData.notes}</p>` : ''}\n<p>We'll show you how our AI automation system can reduce your phone handling costs by 60-80% and recover missed revenue opportunities.</p>`;\n\n// Prepare event data for Microsoft Graph\nconst eventData = {\n  subject: subject,\n  body: {\n    contentType: \"HTML\",\n    content: bodyContent\n  },\n  start: {\n    dateTime: appointmentDateTime.toISOString().split('.')[0],\n    timeZone: bookingData.timezone\n  },\n  end: {\n    dateTime: endDateTime.toISOString().split('.')[0], \n    timeZone: bookingData.timezone\n  },\n  attendees: [\n    {\n      emailAddress: {\n        address: bookingData.customer_email,\n        name: bookingData.customer_name\n      },\n      type: \"required\"\n    }\n  ],\n  isOnlineMeeting: true,\n  onlineMeetingProvider: \"teamsForBusiness\",\n  isReminderOn: true,\n  reminderMinutesBeforeStart: 15\n};\n\nconsole.log('Prepared event data:', JSON.stringify(eventData, null, 2));\n\nreturn {\n  json: {\n    eventData,\n    bookingData,\n    readableDateTime: appointmentDateTime.toLocaleString('en-US', {\n      timeZone: bookingData.timezone,\n      weekday: 'long',\n      month: 'long',\n      day: 'numeric',\n      year: 'numeric',\n      hour: 'numeric',\n      minute: '2-digit',\n      hour12: true\n    })\n  }\n};"
+        "jsCode": "// Prepare meeting data for Microsoft Graph API\nconst bookingData = $('Extract Booking Data').first().json;\n\n// Validate and parse datetime with proper timezone handling\nlet appointmentDateTime;\nif (bookingData.appointment_datetime.includes('T') && bookingData.appointment_datetime.includes('Z')) {\n  // ISO string in UTC - convert to target timezone\n  appointmentDateTime = new Date(bookingData.appointment_datetime);\n} else if (bookingData.appointment_datetime.includes('T')) {\n  // ISO string without timezone - treat as target timezone\n  appointmentDateTime = new Date(bookingData.appointment_datetime + (bookingData.timezone === 'America/Los_Angeles' ? '-08:00' : '-05:00'));\n} else {\n  // Other format - parse as is\n  appointmentDateTime = new Date(bookingData.appointment_datetime);\n}\n\nif (isNaN(appointmentDateTime.getTime())) {\n  throw new Error(`Invalid appointment_datetime format: ${bookingData.appointment_datetime}`);\n}\n\nconsole.log('Input datetime:', bookingData.appointment_datetime);\nconsole.log('Parsed datetime (UTC):', appointmentDateTime.toISOString());\nconsole.log('Target timezone:', bookingData.timezone);\n\n// Calculate end time\nconst durationMinutes = parseInt(bookingData.duration_minutes) || 30;\nconst endDateTime = new Date(appointmentDateTime.getTime() + (durationMinutes * 60000));\n\n// Create meeting subject\nconst subject = `${bookingData.appointment_type} Call - ${bookingData.firstName} ${bookingData.lastName}${bookingData.company_name ? ` (${bookingData.company_name})` : ''}`;\n\n// Create meeting body\nconst bodyContent = `<p><strong>${bookingData.appointment_type} call with ${bookingData.customer_name}</strong></p>\n${bookingData.company_name ? `<p><strong>Company:</strong> ${bookingData.company_name}</p>` : ''}\n<p><strong>Phone:</strong> ${bookingData.customer_phone || 'Not provided'}</p>\n<p><strong>Email:</strong> ${bookingData.customer_email}</p>\n<p><strong>VAPI Call ID:</strong> ${bookingData.vapi_call_id}</p>\n${bookingData.notes ? `<p><strong>Notes:</strong> ${bookingData.notes}</p>` : ''}\n<p>We'll show you how our AI automation system can reduce your phone handling costs by 60-80% and recover missed revenue opportunities.</p>`;\n\n// Prepare event data for Microsoft Graph\nconst eventData = {\n  subject: subject,\n  body: {\n    contentType: \"HTML\",\n    content: bodyContent\n  },\n  start: {\n    dateTime: appointmentDateTime.toISOString().split('.')[0],\n    timeZone: bookingData.timezone\n  },\n  end: {\n    dateTime: endDateTime.toISOString().split('.')[0], \n    timeZone: bookingData.timezone\n  },\n  attendees: [\n    {\n      emailAddress: {\n        address: bookingData.customer_email,\n        name: bookingData.customer_name\n      },\n      type: \"required\"\n    }\n  ],\n  isOnlineMeeting: true,\n  onlineMeetingProvider: \"teamsForBusiness\",\n  isReminderOn: true,\n  reminderMinutesBeforeStart: 15\n};\n\nconsole.log('Prepared event data:', JSON.stringify(eventData, null, 2));\n\nreturn {\n  json: {\n    eventData,\n    bookingData,\n    readableDateTime: appointmentDateTime.toLocaleString('en-US', {\n      timeZone: bookingData.timezone,\n      weekday: 'long',\n      month: 'long',\n      day: 'numeric',\n      year: 'numeric',\n      hour: 'numeric',\n      minute: '2-digit',\n      hour12: true\n    }),\n    debugInfo: {\n      inputDateTime: bookingData.appointment_datetime,\n      parsedUTC: appointmentDateTime.toISOString(),\n      targetTimezone: bookingData.timezone,\n      readableInTimezone: appointmentDateTime.toLocaleString('en-US', {\n        timeZone: bookingData.timezone,\n        hour: 'numeric',\n        minute: '2-digit',\n        hour12: true\n      })\n    }\n  }\n};"
       },
       "id": "6299a7ac-e852-4ded-9be7-9a9ce6750411",
       "name": "Prepare Meeting Data",
@@ -193,7 +202,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Handle booking errors\nconst error = $input.first().json;\nconst bookingData = $('Extract Booking Data').first().json;\n\nconst errorResponse = {\n  status: 'error',\n  message: 'Unable to create appointment at this time',\n  error_details: error.message || 'Unknown error occurred during booking',\n  provided_data: {\n    customer_name: bookingData.customer_name,\n    customer_email: bookingData.customer_email,\n    appointment_datetime: bookingData.appointment_datetime,\n    appointment_type: bookingData.appointment_type\n  },\n  conversation_context: {\n    suggested_response: `I'm having trouble booking that appointment in my calendar right now. Let me take down all your details and I'll have someone from our team reach out within the hour to confirm your ${bookingData.appointment_type.toLowerCase()} and send you the meeting details directly.`,\n    fallback_action: 'manual_booking_required',\n    escalation_needed: true,\n    collected_information: {\n      name: bookingData.customer_name,\n      email: bookingData.customer_email,\n      phone: bookingData.customer_phone,\n      company: bookingData.company_name,\n      preferred_time: bookingData.appointment_datetime,\n      type: bookingData.appointment_type\n    }\n  }\n};\n\nconsole.log('Error response:', JSON.stringify(errorResponse, null, 2));\n\nreturn { json: errorResponse };"
+        "jsCode": "// Handle booking errors - VAPI tool function format\nconst error = $input.first().json;\nconst bookingData = $('Extract Booking Data').first().json;\nconst toolCallId = bookingData.toolCallId;\n\nconst resultMessage = `I'm having trouble booking that appointment in my calendar right now. Let me take down all your details and I'll have someone from our team reach out within the hour to confirm your ${bookingData.appointment_type.toLowerCase()} and send you the meeting details directly.`;\n\nconst errorResponse = {\n  results: [{\n    toolCallId: toolCallId,\n    result: resultMessage\n  }]\n};\n\nconsole.log('Error response:', JSON.stringify(errorResponse, null, 2));\n\nreturn { json: errorResponse };"
       },
       "id": "32a4d840-5bd8-4822-a43e-d98ff63063a4",
       "name": "Handle Booking Error",
@@ -209,11 +218,16 @@
         "respondWith": "json",
         "responseBody": "={{$json}}",
         "options": {
+          "responseCode": 200,
           "responseHeaders": {
             "entries": [
               {
                 "name": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
               }
             ]
           }
@@ -256,7 +270,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Format successful booking response for VAPI\nconst meetingData = $('Create Teams Meeting').first().json;\nconst prepareMeetingData = $('Prepare Meeting Data').first().json;\nconst bookingData = prepareMeetingData.bookingData;\n\nconsole.log('Meeting created:', JSON.stringify(meetingData, null, 2));\n\n// Extract Teams meeting details\nconst meetingUrl = meetingData.onlineMeeting?.joinUrl || meetingData.webLink;\nconst meetingId = meetingData.onlineMeeting?.conferenceId || meetingData.id;\n\nconst successResponse = {\n  status: 'success',\n  message: 'Appointment successfully booked and Teams meeting created',\n  appointment: {\n    id: meetingData.id,\n    subject: meetingData.subject,\n    start_time: meetingData.start.dateTime,\n    end_time: meetingData.end.dateTime,\n    timezone: meetingData.start.timeZone,\n    readable_datetime: prepareMeetingData.readableDateTime,\n    meeting_url: meetingUrl,\n    meeting_id: meetingId\n  },\n  customer: {\n    name: bookingData.customer_name,\n    email: bookingData.customer_email,\n    phone: bookingData.customer_phone,\n    company: bookingData.company_name\n  },\n  conversation_context: {\n    confirmation_message: `Perfect! I've scheduled your ${bookingData.appointment_type.toLowerCase()} for ${prepareMeetingData.readableDateTime}. You'll receive a calendar invitation with the Teams meeting link at ${bookingData.customer_email}. Looking forward to showing you how we can help ${bookingData.company_name || 'your business'} capture more leads and reduce costs!`,\n    next_steps: [\n      'Calendar invitation will be sent shortly',\n      'Teams meeting link included in invitation', \n      'Reminder will be sent 15 minutes before the meeting'\n    ]\n  }\n};\n\nreturn {\n  json: successResponse\n};"
+        "jsCode": "// Format successful booking response for VAPI tool function\nconst meetingData = $('Create Teams Meeting').first().json;\nconst prepareMeetingData = $('Prepare Meeting Data').first().json;\nconst bookingData = prepareMeetingData.bookingData;\nconst toolCallId = bookingData.toolCallId;\n\nconsole.log('Meeting created:', JSON.stringify(meetingData, null, 2));\n\n// Create conversational confirmation message with proper timezone display\nconst confirmedDateTime = new Date(meetingData.start.dateTime);\nconst displayDateTime = confirmedDateTime.toLocaleString('en-US', {\n  timeZone: meetingData.start.timeZone || bookingData.timezone,\n  weekday: 'long',\n  month: 'long',\n  day: 'numeric',\n  year: 'numeric',\n  hour: 'numeric',\n  minute: '2-digit',\n  hour12: true\n});\n\nconsole.log('Meeting start from Graph API:', meetingData.start);\nconsole.log('Display datetime:', displayDateTime);\nconsole.log('Timezone used:', meetingData.start.timeZone || bookingData.timezone);\n\nconst resultMessage = `Perfect! I've scheduled your ${bookingData.appointment_type.toLowerCase()} for ${displayDateTime}. You'll receive a calendar invitation with the Teams meeting link at ${bookingData.customer_email}. Looking forward to showing you how we can help ${bookingData.company_name || 'your business'} capture more leads and reduce costs!`;\n\nconst successResponse = {\n  results: [{\n    toolCallId: toolCallId,\n    result: resultMessage\n  }]\n};\n\nreturn {\n  json: successResponse\n};"
       },
       "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
       "name": "Format Success Response",
@@ -365,15 +379,6 @@
         [
           {
             "node": "Format Success Response",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ],
-      "error": [
-        [
-          {
-            "node": "Handle Booking Error",
             "type": "main",
             "index": 0
           }
