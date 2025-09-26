@@ -1,0 +1,229 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "check_availability",
+      "description": "Check practitioner availability for scheduling medical spa consultations and treatments",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "time_preference": {
+            "type": "string",
+            "enum": ["morning", "afternoon", "evening", "any"],
+            "description": "Client's preferred time of day - morning (9-12), afternoon (12-5), evening (5-7), or any"
+          },
+          "date": {
+            "type": "string",
+            "description": "Preferred date in YYYY-MM-DD format. If client says 'tomorrow', 'next week', etc., convert to actual date"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "Client's timezone (e.g., America/Los_Angeles, America/New_York)",
+            "default": "America/Los_Angeles"
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "description": "Expected consultation/treatment duration in minutes",
+            "default": 45
+          },
+          "appointment_type": {
+            "type": "string",
+            "enum": ["consultation", "botox_treatment", "filler_treatment", "laser_treatment", "coolsculpting", "follow_up", "medical_evaluation"],
+            "description": "Type of medical spa appointment needed"
+          },
+          "practitioner_type": {
+            "type": "string",
+            "enum": ["any", "physician", "nurse_practitioner", "laser_specialist", "injector"],
+            "description": "Preferred type of medical practitioner",
+            "default": "any"
+          },
+          "treatment_area": {
+            "type": "string",
+            "enum": ["face", "body", "skin", "multiple", "consultation_only"],
+            "description": "Primary treatment area of interest"
+          }
+        },
+        "required": ["time_preference"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "book_appointment",
+      "description": "Book a confirmed consultation or treatment appointment with a medical spa practitioner",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "client_name": {
+            "type": "string",
+            "description": "Full name of the client"
+          },
+          "client_email": {
+            "type": "string",
+            "description": "Client's email address for appointment confirmation and medical forms"
+          },
+          "client_phone": {
+            "type": "string",
+            "description": "Client's phone number"
+          },
+          "appointment_datetime": {
+            "type": "string",
+            "description": "Confirmed appointment date and time in ISO format (YYYY-MM-DDTHH:MM:SS)"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "Client's timezone",
+            "default": "America/Los_Angeles"
+          },
+          "appointment_type": {
+            "type": "string",
+            "enum": ["consultation", "botox_treatment", "filler_treatment", "laser_treatment", "coolsculpting", "follow_up", "medical_evaluation"],
+            "description": "Type of medical spa appointment"
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "description": "Appointment duration in minutes",
+            "default": 45
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes about the client's aesthetic goals or appointment details"
+          },
+          "treatment_interests": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["botox", "fillers", "laser_hair_removal", "coolsculpting", "chemical_peels", "microneedling", "pdo_threads", "skin_tightening", "other"]
+            },
+            "description": "Treatments the client is interested in discussing"
+          },
+          "treatment_areas": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["forehead", "crow_feet", "frown_lines", "lips", "cheeks", "jawline", "neck", "abdomen", "flanks", "thighs", "arms", "face_general", "body_general"]
+            },
+            "description": "Specific areas client wants to address"
+          },
+          "existing_client": {
+            "type": "boolean",
+            "description": "Whether this is an existing client or new to the practice"
+          },
+          "previous_treatments": {
+            "type": "string",
+            "description": "Any previous aesthetic treatments client has received"
+          },
+          "medical_conditions": {
+            "type": "string",
+            "description": "Relevant medical conditions or medications (for pre-consultation screening)"
+          },
+          "age_range": {
+            "type": "string",
+            "enum": ["18-25", "26-35", "36-45", "46-55", "56-65", "65+", "prefer_not_to_say"],
+            "description": "Client's age range for treatment planning"
+          }
+        },
+        "required": ["client_name", "client_email", "appointment_datetime", "appointment_type"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "assistant_message_handler",
+      "description": "Send detailed messages to medical spa practitioners for client follow-up and medical triage",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Client's full name"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Client's phone number"
+          },
+          "email": {
+            "type": "string",
+            "description": "Client's email address"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "description": "Client's date of birth (for existing client identification)"
+          },
+          "client_id": {
+            "type": "string",
+            "description": "Existing client ID if applicable"
+          },
+          "treatment_interests": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["botox", "fillers", "laser_hair_removal", "coolsculpting", "chemical_peels", "microneedling", "pdo_threads", "skin_tightening", "post_treatment_concern", "other"]
+            },
+            "description": "Treatments client is interested in or concerned about"
+          },
+          "message": {
+            "type": "string",
+            "description": "Detailed message about client's needs, concerns, or situation"
+          },
+          "call_outcome": {
+            "type": "string",
+            "enum": ["consultation_scheduled", "message_taken", "callback_requested", "urgent_medical_callback", "post_treatment_concern", "treatment_scheduled"],
+            "description": "Outcome of the call"
+          },
+          "urgency_level": {
+            "type": "string",
+            "enum": ["urgent", "important", "routine"],
+            "description": "Priority level - urgent (medical complications/emergencies), important (consultations/treatments), routine (general questions)"
+          },
+          "next_steps": {
+            "type": "string",
+            "description": "Recommended next steps or client preferences for follow-up"
+          },
+          "client_type": {
+            "type": "string",
+            "enum": ["existing", "new", "consultation", "post_treatment"],
+            "description": "Type of client relationship"
+          },
+          "timeline": {
+            "type": "string",
+            "description": "Client's timeline for treatment or resolution"
+          },
+          "previous_treatments": {
+            "type": "string",
+            "description": "Previous aesthetic treatments with dates (if known)"
+          },
+          "medical_history": {
+            "type": "string",
+            "description": "Relevant medical conditions, medications, or allergies mentioned"
+          },
+          "treatment_goals": {
+            "type": "string",
+            "description": "Client's aesthetic goals and desired outcomes"
+          },
+          "consultation_type": {
+            "type": "string",
+            "enum": ["first_time", "follow_up", "treatment_planning", "second_opinion", "post_treatment"],
+            "description": "Type of consultation needed"
+          },
+          "budget_range": {
+            "type": "string",
+            "enum": ["under_500", "500_1000", "1000_2500", "2500_5000", "5000_plus", "not_discussed"],
+            "description": "Budget range discussed (if applicable)"
+          },
+          "referral_source": {
+            "type": "string",
+            "description": "How the client heard about the practice"
+          },
+          "preferred_practitioner": {
+            "type": "string",
+            "description": "If client requested a specific practitioner"
+          }
+        },
+        "required": ["name", "phone", "message", "call_outcome", "urgency_level"]
+      }
+    }
+  }
+]

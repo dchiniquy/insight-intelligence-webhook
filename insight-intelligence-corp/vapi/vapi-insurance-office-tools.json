@@ -1,0 +1,165 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "check_availability",
+      "description": "Check agent availability for scheduling appointments with insurance customers",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "time_preference": {
+            "type": "string",
+            "enum": ["morning", "afternoon", "evening", "any"],
+            "description": "Customer's preferred time of day - morning (9-12), afternoon (12-5), evening (5-7), or any"
+          },
+          "date": {
+            "type": "string",
+            "description": "Preferred date in YYYY-MM-DD format. If customer says 'tomorrow', 'next week', etc., convert to actual date"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "Customer's timezone (e.g., America/Los_Angeles, America/New_York)",
+            "default": "America/Los_Angeles"
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "description": "Expected appointment duration in minutes",
+            "default": 45
+          },
+          "appointment_type": {
+            "type": "string",
+            "enum": ["quote", "policy_review", "claim_discussion", "new_customer", "consultation"],
+            "description": "Type of insurance appointment needed"
+          }
+        },
+        "required": ["time_preference"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "book_appointment",
+      "description": "Book a confirmed appointment with an insurance agent",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "customer_name": {
+            "type": "string",
+            "description": "Full name of the customer"
+          },
+          "customer_email": {
+            "type": "string",
+            "description": "Customer's email address for appointment confirmation"
+          },
+          "customer_phone": {
+            "type": "string",
+            "description": "Customer's phone number"
+          },
+          "appointment_datetime": {
+            "type": "string",
+            "description": "Confirmed appointment date and time in ISO format (YYYY-MM-DDTHH:MM:SS)"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "Customer's timezone",
+            "default": "America/Los_Angeles"
+          },
+          "appointment_type": {
+            "type": "string",
+            "enum": ["quote", "policy_review", "claim_discussion", "new_customer", "consultation"],
+            "description": "Type of insurance appointment"
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "description": "Appointment duration in minutes",
+            "default": 45
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes about the customer's needs or appointment details"
+          },
+          "insurance_type": {
+            "type": "string",
+            "enum": ["auto", "home", "life", "business", "renters", "multiple"],
+            "description": "Type of insurance the customer is interested in"
+          },
+          "existing_customer": {
+            "type": "boolean",
+            "description": "Whether this is an existing policyholder or new customer"
+          }
+        },
+        "required": ["customer_name", "customer_email", "appointment_datetime", "appointment_type"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "assistant_message_handler",
+      "description": "Send detailed messages to insurance agents for follow-up with customers",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Customer's full name"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Customer's phone number"
+          },
+          "email": {
+            "type": "string",
+            "description": "Customer's email address"
+          },
+          "company": {
+            "type": "string",
+            "description": "Customer's company name (if business insurance)"
+          },
+          "policy_number": {
+            "type": "string",
+            "description": "Existing policy number (if existing customer)"
+          },
+          "insurance_type": {
+            "type": "string",
+            "enum": ["auto", "home", "life", "business", "renters", "multiple", "claim"],
+            "description": "Type of insurance inquiry"
+          },
+          "message": {
+            "type": "string",
+            "description": "Detailed message about customer's needs, questions, or situation"
+          },
+          "call_outcome": {
+            "type": "string",
+            "enum": ["message_taken", "appointment_scheduled", "callback_requested", "urgent_callback_requested", "claim_initiated"],
+            "description": "Outcome of the call"
+          },
+          "interest_level": {
+            "type": "string",
+            "enum": ["urgent", "important", "routine"],
+            "description": "Priority level - urgent (claims/emergencies), important (quotes/policy changes), routine (general questions)"
+          },
+          "next_steps": {
+            "type": "string",
+            "description": "Recommended next steps or customer preferences for follow-up"
+          },
+          "customer_type": {
+            "type": "string",
+            "enum": ["existing", "new", "prospect", "claim"],
+            "description": "Type of customer relationship"
+          },
+          "timeline": {
+            "type": "string",
+            "description": "Customer's timeline for needing coverage or resolution"
+          },
+          "current_carrier": {
+            "type": "string",
+            "description": "Customer's current insurance company (if switching/comparing)"
+          }
+        },
+        "required": ["name", "phone", "message", "call_outcome", "interest_level"]
+      }
+    }
+  }
+]
